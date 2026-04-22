@@ -16,7 +16,6 @@ from report_tool.llm import ModelFetchError, fetch_models_for_provider
 
 CONFIG_PATH = ROOT_DIR / "config.json"
 OUTPUT_DIR = ROOT_DIR / "outputs" / "runtime_reports"
-UPLOAD_DIR = ROOT_DIR / "outputs" / "runtime_uploads"
 
 
 def _resolve_log_dir() -> Path:
@@ -86,11 +85,9 @@ def _build_runtime_config_path(payload: dict) -> str:
             "Remove base_url to use OpenRouter, or set provider to 'local'."
         )
 
-    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     with NamedTemporaryFile(
         prefix="runtime_cfg_",
         suffix=".json",
-        dir=UPLOAD_DIR,
         mode="w",
         encoding="utf-8",
         delete=False,
@@ -107,7 +104,6 @@ def _read_stdin_json() -> dict:
 
 
 def _write_temp_upload(filename: str, content_b64: str) -> Path:
-    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     suffix = Path(filename).suffix or ".txt"
     allowed_suffixes = {".txt", ".csv", ".xlsx", ".xls"}
     if suffix.lower() not in allowed_suffixes:
@@ -115,7 +111,7 @@ def _write_temp_upload(filename: str, content_b64: str) -> Path:
             f"Unsupported upload file type: {suffix}. Allowed: {sorted(allowed_suffixes)}"
         )
     with NamedTemporaryFile(
-        prefix="runtime_upload_", suffix=suffix, dir=UPLOAD_DIR, delete=False
+        prefix="runtime_upload_", suffix=suffix, delete=False
     ) as tmp:
         tmp.write(base64.b64decode(content_b64))
         return Path(tmp.name)
@@ -168,7 +164,7 @@ def _run_analyze(payload: dict) -> dict:
         return {"ok": False, "error": "filename and file_content_base64 are required"}
 
     upload_path = _write_temp_upload(filename, content_b64)
-    runtime_config_path = _build_runtime_config_path(payload)
+    runtime_config_path = ""
 
     def _emit_progress(
         stage: str,
@@ -192,9 +188,9 @@ def _run_analyze(payload: dict) -> dict:
             # Progress reporting must never break analysis execution.
             pass
 
-    run_logs_before = {str(path) for path in _list_run_logs()}
-
     try:
+        runtime_config_path = _build_runtime_config_path(payload)
+        run_logs_before = {str(path) for path in _list_run_logs()}
         data, raw_texts, false_positives = gr.generate_per_vuln(
             str(upload_path),
             config_path=runtime_config_path,
@@ -203,7 +199,9 @@ def _run_analyze(payload: dict) -> dict:
             api_key=api_key,
         )
     finally:
-        Path(runtime_config_path).unlink(missing_ok=True)
+        if runtime_config_path:
+            Path(runtime_config_path).unlink(missing_ok=True)
+        upload_path.unlink(missing_ok=True)
 
     run_logs_after = _list_run_logs()
     new_run_logs = [path for path in run_logs_after if str(path) not in run_logs_before]

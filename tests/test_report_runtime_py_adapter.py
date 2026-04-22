@@ -121,6 +121,44 @@ class ReportRuntimePyAdapterTests(unittest.TestCase):
             "logs/20260422_120000_000001_run_log.json",
         )
 
+    def test_run_analyze_removes_temp_upload_and_runtime_config(self) -> None:
+        payload = {
+            "filename": "input.csv",
+            "file_content_base64": base64.b64encode(b"x").decode("ascii"),
+        }
+        expected_data = {"findings": []}
+
+        with TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            upload_path = tmp_path / "runtime_upload_input.csv"
+            upload_path.write_text("col\n1\n", encoding="utf-8")
+            runtime_config_path = tmp_path / "runtime_cfg.json"
+            runtime_config_path.write_text("{}", encoding="utf-8")
+
+            def _fake_generate_per_vuln(scan_path, config_path, **_kwargs):
+                self.assertEqual(Path(scan_path), upload_path)
+                self.assertEqual(Path(config_path), runtime_config_path)
+                self.assertTrue(upload_path.exists())
+                self.assertTrue(runtime_config_path.exists())
+                return expected_data, [], []
+
+            with patch.object(
+                py_adapter, "_write_temp_upload", return_value=upload_path
+            ), patch.object(
+                py_adapter, "_build_runtime_config_path", return_value=str(runtime_config_path)
+            ), patch.object(
+                py_adapter, "_list_run_logs", side_effect=[[], []]
+            ), patch.object(
+                py_adapter.gr,
+                "generate_per_vuln",
+                side_effect=_fake_generate_per_vuln,
+            ):
+                result = py_adapter._run_analyze(payload)
+
+            self.assertTrue(result["ok"])
+            self.assertFalse(upload_path.exists())
+            self.assertFalse(runtime_config_path.exists())
+
     def test_count_llm_interactions_reads_run_log_events(self) -> None:
         with TemporaryDirectory() as tmp_dir:
             run_log_path = Path(tmp_dir) / "run_log.json"

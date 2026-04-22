@@ -315,6 +315,28 @@ class StructuredHelperTests(unittest.TestCase):
         self.assertNotEqual(summary_idx, -1, "Summary table not found in rendered DOCX body")
         return chart_idx, summary_idx
 
+    def _body_text_index(self, docx_path: Path, expected_text: str) -> int:
+        from lxml import etree as ET
+
+        with ZipFile(docx_path) as archive:
+            root = ET.fromstring(archive.read("word/document.xml"))
+
+        ns = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+        body = root.find("w:body", ns)
+        self.assertIsNotNone(body)
+
+        expected = expected_text.strip()
+        for idx, child in enumerate(body):
+            texts = [
+                text.strip()
+                for text in child.xpath(".//w:t/text()", namespaces=ns)
+                if text.strip()
+            ]
+            if " ".join(texts) == expected:
+                return idx
+
+        self.fail(f"Body text not found in rendered DOCX: {expected_text}")
+
     def test_build_finding_preserves_all_assets_raw(self):
         assets = [f"10.0.0.{idx}:443" for idx in range(1, 13)]
 
@@ -1637,7 +1659,7 @@ class StructuredHelperTests(unittest.TestCase):
         self.assertIsNotNone(shading)
         self.assertEqual(shading.get(gr.qn("w:fill")), gr._BG_SEV["High"])
 
-    def test_render_report_moves_chart_before_summary_table_and_updates_chart_data(
+    def test_render_report_preserves_template_chart_order_and_updates_chart_data(
         self,
     ):
         template_path = (
@@ -1686,7 +1708,20 @@ class StructuredHelperTests(unittest.TestCase):
             )
 
             chart_idx, summary_idx = self._body_chart_and_summary_indexes(output_path)
-            self.assertLess(chart_idx, summary_idx)
+            chart_caption_idx = self._body_text_index(
+                output_path, "Vulnerabilities Reported Vulnerabilities Reported"
+            )
+            summary_heading_idx = self._body_text_index(
+                output_path, "Summary of Vulnerabilities"
+            )
+            detail_heading_idx = self._body_text_index(
+                output_path, "Detailed Observation – Proof of Concept"
+            )
+            self.assertLess(summary_heading_idx, summary_idx)
+            self.assertLess(summary_idx, chart_idx)
+            self.assertLess(summary_idx, chart_caption_idx)
+            self.assertLess(chart_idx, detail_heading_idx)
+            self.assertLess(chart_caption_idx, detail_heading_idx)
 
             from lxml import etree as ET
             from openpyxl import load_workbook

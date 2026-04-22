@@ -17,6 +17,7 @@ const ROOT_DIR = path.resolve(__dirname, "..");
 const RUNTIME_DIR = path.resolve(__dirname);
 const PUBLIC_DIR = path.join(__dirname, "public");
 const PY_ADAPTER = path.join(__dirname, "py_adapter.py");
+const HISTORY_CLI = path.join(__dirname, "history_cli.py");
 const CONFIG_PATH = path.join(ROOT_DIR, "config.json");
 const SETTINGS_PATH = path.join(RUNTIME_DIR, "settings.json");
 const TEMPLATE_DIR = path.join(RUNTIME_DIR, "templates");
@@ -27,10 +28,6 @@ const analyses = new Map();
 const downloads = new Map();
 const analyzeJobs = new Map();
 const generateJobs = new Map();
-
-// ── History persistence ───────────────────────────────────────────────────────
-const HISTORY_PATH = path.join(ROOT_DIR, "outputs", "history", "history.json");
-const HISTORY_MAX = 200;
 
 function resolveExistingProjectFile(candidatePath) {
   const resolved = resolveProjectPath(candidatePath);
@@ -118,34 +115,6 @@ function normalizeHistoryEntry(entry) {
       ).trim(),
     },
   };
-}
-
-function readHistory() {
-  try {
-    if (!fs.existsSync(HISTORY_PATH)) {
-      return [];
-    }
-    const parsed = JSON.parse(fs.readFileSync(HISTORY_PATH, "utf8"));
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-    return parsed.map((entry) => normalizeHistoryEntry(entry));
-  } catch (_) {
-    return [];
-  }
-}
-
-function appendHistory(entry) {
-  try {
-    const hist = readHistory();
-    hist.unshift(normalizeHistoryEntry(entry));
-    const trimmed = hist.slice(0, HISTORY_MAX);
-    fs.mkdirSync(path.dirname(HISTORY_PATH), { recursive: true });
-    fs.writeFileSync(HISTORY_PATH, JSON.stringify(trimmed, null, 2), "utf8");
-  } catch (err) {
-    // History write failure must never break report generation
-    console.error("History write failed:", err.message || err);
-  }
 }
 
 function setExpiringEntry(mapRef, key, value) {
@@ -329,6 +298,94 @@ function spawnAdapter(payload, onProgress) {
 async function callAdapter(payload) {
   const { completion } = spawnAdapter(payload);
   return completion;
+}
+
+async function callHistoryCli(payload) {
+  const pythonBin = resolvePythonBinary();
+  const pythonPath = process.env.PYTHONPATH
+    ? `${ROOT_DIR}:${process.env.PYTHONPATH}`
+    : ROOT_DIR;
+  const child = spawn(pythonBin, [HISTORY_CLI], {
+    cwd: ROOT_DIR,
+    stdio: ["pipe", "pipe", "pipe"],
+    env: {
+      ...process.env,
+      PYTHONPATH: pythonPath,
+    },
+  });
+
+  const completion = new Promise((resolve, reject) => {
+    const stdoutChunks = [];
+    const stderrChunks = [];
+
+    child.stdout.on("data", (chunk) => stdoutChunks.push(chunk));
+    child.stderr.on("data", (chunk) => stderrChunks.push(chunk));
+    child.on("error", (err) => reject(err));
+    child.on("close", (code) => {
+      const stdout = Buffer.concat(stdoutChunks).toString("utf8");
+      const stderr = Buffer.concat(stderrChunks).toString("utf8").trim();
+
+      let parsed = null;
+      try {
+        parsed = stdout ? JSON.parse(stdout) : {};
+      } catch (_err) {
+        parsed = null;
+      }
+
+      if (parsed && code === 0) {
+        resolve(parsed);
+        return;
+      }
+      if (parsed && parsed.error) {
+        reject(new Error(parsed.error));
+        return;
+      }
+
+      reject(
+        new Error(stderr || `History CLI exited with code ${String(code || 0)}`),
+      );
+    });
+  });
+
+  child.stdin.write(JSON.stringify(payload));
+  child.stdin.end();
+  return completion;
+}
+
+async function readHistory() {
+  try {
+    const result = await callHistoryCli({ action: "list" });
+    const history = Array.isArray(result && result.history) ? result.history : [];
+    return history.map((entry) => normalizeHistoryEntry(entry));
+  } catch (err) {
+    console.error("History read failed:", err.message || err);
+    return [];
+  }
+}
+
+async function getHistoryEntry(id) {
+  try {
+    const result = await callHistoryCli({ action: "get", id });
+    if (!result || !result.entry || typeof result.entry !== "object") {
+      return null;
+    }
+    return normalizeHistoryEntry(result.entry);
+  } catch (err) {
+    console.error("History read failed:", err.message || err);
+    return null;
+  }
+}
+
+async function appendHistory(entry) {
+  try {
+    await callHistoryCli({
+      action: "append",
+      entry: normalizeHistoryEntry(entry),
+    });
+  } catch (err) {
+    // History write failure must never break report generation
+    console.error("History write failed:", err.message || err);
+  }
 }
 
 function serveStatic(req, res) {
@@ -564,7 +621,7 @@ function startAnalyzeJob(requestBody) {
 
   job.child = adapter.child;
   adapter.completion
-    .then((result) => {
+    .then(async (result) => {
       if (job.status === "canceled") {
         return;
       }
@@ -684,7 +741,7 @@ function startGenerateJob(requestBody) {
 
   job.child = adapter.child;
   adapter.completion
-    .then((result) => {
+    .then(async (result) => {
       if (job.status === "canceled") {
         return;
       }
@@ -713,7 +770,7 @@ function startGenerateJob(requestBody) {
       };
 
       // Append to persistent history
-      appendHistory({
+      await appendHistory({
         id: historyId,
         date: new Date().toISOString(),
         input_name:
@@ -893,7 +950,7 @@ function handleGenerateCancel(req, res) {
   jsonResponse(res, 200, { ok: true, status: "canceled" });
 }
 
-function handleDownload(req, res) {
+async function handleDownload(req, res) {
   const parts = req.url.split("/");
   const id = parts[parts.length - 1];
   const item = downloads.get(id);
@@ -915,7 +972,7 @@ function handleDownload(req, res) {
     return;
   }
 
-  const historyEntry = readHistory().find((entry) => entry.id === id);
+  const historyEntry = await getHistoryEntry(id);
   const reportPath = historyEntry && resolveExistingProjectFile(historyEntry.report_path);
   if (!historyEntry || !reportPath) {
     jsonResponse(res, 404, { error: "Download not found or expired" });
@@ -930,8 +987,8 @@ function handleDownload(req, res) {
   );
 }
 
-function handleHistory(_req, res) {
-  const history = readHistory().map((entry) => ({
+async function handleHistory(_req, res) {
+  const history = (await readHistory()).map((entry) => ({
     ...entry,
     report_download_url: entry.report_path ? `/api/history/${entry.id}/report` : "",
     log_download_url: entry.log_path ? `/api/history/${entry.id}/log` : "",
@@ -939,7 +996,7 @@ function handleHistory(_req, res) {
   jsonResponse(res, 200, { ok: true, history });
 }
 
-function handleHistoryArtifact(req, res) {
+async function handleHistoryArtifact(req, res) {
   const match = req.url.match(/^\/api\/history\/([^/]+)\/(report|log)$/);
   if (!match) {
     jsonResponse(res, 404, { error: "History artifact not found" });
@@ -947,7 +1004,7 @@ function handleHistoryArtifact(req, res) {
   }
 
   const [, id, artifactType] = match;
-  const historyEntry = readHistory().find((entry) => entry.id === id);
+  const historyEntry = await getHistoryEntry(id);
   if (!historyEntry) {
     jsonResponse(res, 404, { error: "History entry not found" });
     return;
@@ -1045,17 +1102,17 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === "GET" && req.url === "/api/history") {
-      handleHistory(req, res);
+      await handleHistory(req, res);
       return;
     }
 
     if (req.method === "GET" && /^\/api\/history\/[^/]+\/(report|log)$/.test(req.url)) {
-      handleHistoryArtifact(req, res);
+      await handleHistoryArtifact(req, res);
       return;
     }
 
     if (req.method === "GET" && req.url.startsWith("/api/download/")) {
-      handleDownload(req, res);
+      await handleDownload(req, res);
       return;
     }
 

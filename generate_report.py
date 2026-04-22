@@ -2986,35 +2986,6 @@ def _update_chart_severity_counts(doc, findings: list) -> None:
         print(f"⚠️  Chart update: {e}", file=sys.stderr)
 
 
-def _move_chart_above_summary_table(body, summary_tbl_xml) -> None:
-    """Move only the chart paragraph before the summary table."""
-    if summary_tbl_xml is None:
-        return
-
-    children = list(body)
-    summary_idx = next(
-        (idx for idx, child in enumerate(children) if child is summary_tbl_xml),
-        -1,
-    )
-    if summary_idx < 0:
-        return
-
-    chart_ns = "http://schemas.openxmlformats.org/drawingml/2006/chart"
-    chart_idx = -1
-    for idx, child in enumerate(children):
-        tag = child.tag.split("}")[-1] if "}" in child.tag else child.tag
-        if tag != "p":
-            continue
-        if child.findall(f".//{{{chart_ns}}}chart"):
-            chart_idx = idx
-            break
-
-    if chart_idx < 0 or chart_idx < summary_idx:
-        return
-
-    summary_tbl_xml.addprevious(children[chart_idx])
-
-
 def render_report(
     data: dict,
     template_path: str,
@@ -3298,7 +3269,6 @@ def render_report(
                         "FFFFFF" if sev in {"Critical", "High"} else "000000",
                     )
                 summary_tbl_xml.append(new_row)
-            _move_chart_above_summary_table(body, summary_tbl_xml)
         else:
             # Remove summary table entirely
             parent = summary_tbl_xml.getparent()
