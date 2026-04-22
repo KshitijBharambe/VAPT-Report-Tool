@@ -1,0 +1,1865 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Report Tool Runtime</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg: #f0f4f2;
+        --card: #ffffff;
+        --ink: #0e1f18;
+        --ink-2: #243d32;
+        --muted: #4d6358;
+        --muted-light: #7a9187;
+        --primary: #0a6644;
+        --primary-mid: #0c7a51;
+        --primary-strong: #075234;
+        --primary-subtle: #e6f4ed;
+        --primary-subtle-2: #d2eadc;
+        --edge: #cdd8d2;
+        --edge-strong: #b4c4bb;
+        --danger: #b91c1c;
+        --danger-strong: #991b1b;
+        --danger-subtle: #fee2e2;
+        --warn-bg: #fffbeb;
+        --warn-edge: #fcd34d;
+        --warn-text: #92400e;
+        --error-bg: #fef2f2;
+        --error-edge: #fca5a5;
+        --error-text: #991b1b;
+        --info-bg: #ecfdf5;
+        --info-edge: #6ee7b7;
+        --info-text: #065f46;
+        --neutral-bg: #f8faf9;
+        --neutral-edge: #e2ebe5;
+        --radius: 12px;
+        --radius-sm: 8px;
+        --shadow-card: 0 1px 3px rgba(0,0,0,0.06), 0 8px 24px rgba(10,102,68,0.07);
+        --shadow-hover: 0 4px 6px rgba(0,0,0,0.05), 0 12px 32px rgba(10,102,68,0.11);
+        --transition: 0.18s ease;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+        font-size: 15px;
+        line-height: 1.55;
+        color: var(--ink);
+        background: var(--bg);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* ── App Shell ───────────────────────────────────────── */
+      .app-header {
+        background: linear-gradient(135deg, #0a6644 0%, #0c7a51 60%, #0e8f5e 100%);
+        padding: 0 24px;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        box-shadow: 0 2px 8px rgba(10,102,68,0.25);
+      }
+      .app-header-inner {
+        max-width: 1200px;
+        margin: 0 auto;
+        height: 56px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .app-logo {
+        width: 30px; height: 30px;
+        background: rgba(255,255,255,0.18);
+        border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1rem;
+        flex-shrink: 0;
+      }
+      .app-name {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: -0.2px;
+      }
+      .app-tagline {
+        font-size: 0.82rem;
+        color: rgba(255,255,255,0.65);
+        margin-left: 2px;
+        display: none;
+      }
+      @media (min-width: 560px) { .app-tagline { display: inline; } }
+
+      .wrap { max-width: 1200px; margin: 28px auto; padding: 0 28px; }
+
+      /* ── Typography ──────────────────────────────────────── */
+      h1 { margin: 0 0 4px; font-size: 1.7rem; font-weight: 700; letter-spacing: -0.3px; color: var(--ink); }
+      h2 {
+        margin: 0 0 14px;
+        font-size: 0.72rem;
+        color: var(--muted);
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+      p.lead { margin: 0 0 20px; color: var(--muted); font-size: 0.96rem; }
+
+      /* ── Card ────────────────────────────────────────────── */
+      .card {
+        background: var(--card);
+        border: 1px solid var(--edge);
+        border-radius: var(--radius);
+        padding: 24px;
+        box-shadow: var(--shadow-card);
+        margin-bottom: 16px;
+        transition: box-shadow var(--transition);
+      }
+
+      /* ── Grid / layout helpers ───────────────────────────── */
+      .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 20px; }
+      .analyze-top-grid {
+        display: grid;
+        grid-template-columns: minmax(260px, 0.9fr) minmax(320px, 1.1fr);
+        gap: 20px 28px;
+        align-items: start;
+      }
+      .analyze-top-grid > * { min-width: 0; align-self: start; }
+      .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+      label {
+        font-size: 0.84rem;
+        color: var(--ink-2);
+        font-weight: 600;
+        letter-spacing: 0.01em;
+      }
+      small {
+        color: var(--muted);
+        font-size: 0.84rem;
+        line-height: 1.55;
+      }
+
+      /* ── Form controls ───────────────────────────────────── */
+      input, select, textarea, button { font: inherit; }
+
+      input[type="text"],
+      input[type="password"],
+      select,
+      textarea {
+        width: 100%;
+        border: 1.5px solid var(--edge);
+        border-radius: var(--radius-sm);
+        padding: 10px 13px;
+        background: #fff;
+        color: var(--ink);
+        transition: border-color var(--transition), box-shadow var(--transition);
+        font-size: 0.93rem;
+      }
+      input[type="text"]:focus,
+      input[type="password"]:focus,
+      select:focus,
+      textarea:focus {
+        outline: none;
+        border-color: var(--primary-mid);
+        box-shadow: 0 0 0 3px rgba(10,102,68,0.13);
+      }
+      input[type="text"]:hover:not(:focus),
+      input[type="password"]:hover:not(:focus),
+      select:hover:not(:focus),
+      textarea:hover:not(:focus) { border-color: var(--edge-strong); }
+
+      input[type="file"] {
+        width: 100%;
+        border: 2px dashed var(--edge);
+        border-radius: var(--radius-sm);
+        padding: 14px 13px;
+        background: var(--neutral-bg);
+        color: var(--muted);
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: border-color var(--transition), background var(--transition);
+      }
+      input[type="file"]:hover { border-color: var(--primary-mid); background: var(--primary-subtle); }
+
+      textarea { min-height: 110px; resize: vertical; line-height: 1.5; }
+
+      /* ── Buttons ─────────────────────────────────────────── */
+      button {
+        border: 0;
+        border-radius: var(--radius-sm);
+        padding: 10px 18px;
+        background: var(--primary);
+        color: #fff;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.92rem;
+        letter-spacing: 0.01em;
+        transition: background var(--transition), box-shadow var(--transition), transform 0.1s;
+        box-shadow: 0 1px 3px rgba(10,102,68,0.2);
+      }
+      button:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
+      button:hover:enabled {
+        background: var(--primary-strong);
+        box-shadow: 0 2px 8px rgba(10,102,68,0.3);
+      }
+      button:active:enabled { transform: translateY(1px); }
+
+      .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+      .actions .danger { background: var(--danger); box-shadow: 0 1px 3px rgba(185,28,28,0.2); }
+      .actions .danger:hover:enabled { background: var(--danger-strong); box-shadow: 0 2px 8px rgba(185,28,28,0.3); }
+      .actions .secondary { background: #2a4a3d; }
+      .actions .secondary:hover:enabled { background: #1e3630; }
+
+      .inline-row { display: flex; gap: 8px; align-items: stretch; }
+      .inline-row input, .inline-row select { flex: 1; }
+
+      /* ── Section anatomy ─────────────────────────────────── */
+      .section-block { margin-bottom: 20px; }
+      .section-block:last-child { margin-bottom: 0; }
+
+      .section-kicker {
+        margin: 0 0 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--primary);
+      }
+      .section-kicker::before {
+        content: "";
+        display: inline-block;
+        width: 3px; height: 14px;
+        background: var(--primary);
+        border-radius: 2px;
+        flex-shrink: 0;
+      }
+
+      .helper-callout {
+        margin-top: 8px;
+        padding: 10px 14px;
+        border-radius: var(--radius-sm);
+        background: var(--warn-bg);
+        border: 1px solid var(--warn-edge);
+        font-size: 0.84rem;
+        color: var(--warn-text);
+        line-height: 1.55;
+      }
+      .section-shell { padding: 0 0 4px; border: 0; background: transparent; }
+      .section-divider {
+        margin-top: 24px;
+        padding-top: 22px;
+        border-top: 1px solid var(--neutral-edge);
+      }
+
+      /* ── Status / alerts ─────────────────────────────────── */
+      .status {
+        margin-top: 14px;
+        padding: 11px 14px;
+        border-radius: var(--radius-sm);
+        background: var(--neutral-bg);
+        border: 1px solid var(--edge);
+        font-size: 0.9rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        line-height: 1.5;
+      }
+      .status::before {
+        content: "ℹ";
+        font-size: 0.95rem;
+        flex-shrink: 0;
+        margin-top: 1px;
+        color: var(--muted-light);
+      }
+      .status.error { background: var(--error-bg); border-color: var(--error-edge); color: var(--error-text); }
+      .status.error::before { content: "✕"; color: var(--error-text); }
+      .status.warn  { background: var(--warn-bg); border-color: var(--warn-edge); color: var(--warn-text); }
+      .status.warn::before { content: "⚠"; color: var(--warn-text); }
+      .status.success { background: var(--info-bg); border-color: var(--info-edge); color: var(--info-text); }
+      .status.success::before { content: "✓"; color: var(--info-text); }
+
+      /* ── Progress ────────────────────────────────────────── */
+      .progress-wrap {
+        margin-top: 14px;
+        background: var(--neutral-bg);
+        border-radius: 100px;
+        height: 6px;
+        overflow: hidden;
+        border: 1px solid var(--edge);
+      }
+      .progress-bar-inner {
+        height: 100%;
+        background: linear-gradient(90deg, var(--primary) 0%, var(--primary-mid) 100%);
+        border-radius: 100px;
+        transition: width 0.35s ease;
+        width: 0%;
+      }
+      progress { display: none; } /* hidden — replaced by custom progress */
+      .progress-detail {
+        margin-top: 7px;
+        color: var(--muted);
+        font-size: 0.85rem;
+        line-height: 1.4;
+      }
+
+      .result { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--edge); }
+      .hidden { display: none !important; }
+
+      /* ── Tab nav ─────────────────────────────────────────── */
+      .tab-nav {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 18px;
+        background: var(--card);
+        border: 1px solid var(--edge);
+        border-radius: 10px;
+        padding: 4px;
+        box-shadow: var(--shadow-card);
+        width: fit-content;
+      }
+      .tab-btn {
+        background: transparent;
+        color: var(--muted);
+        border: none;
+        border-radius: 7px;
+        padding: 8px 22px;
+        font-size: 0.92rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background var(--transition), color var(--transition);
+        letter-spacing: 0.01em;
+      }
+      .tab-btn:hover:enabled { color: var(--primary); background: var(--primary-subtle); }
+      .tab-btn.active { color: var(--primary-strong); background: var(--primary-subtle-2); box-shadow: 0 1px 3px rgba(10,102,68,0.12); }
+      .tab-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+      .tab-panel { display: none; }
+      .tab-panel.active { display: block; }
+
+      /* ── Log panel ───────────────────────────────────────── */
+      .log-panel {
+        max-height: 260px; overflow-y: auto;
+        background: #0d1f17; color: #d4ede0;
+        border-radius: var(--radius-sm); padding: 14px;
+        font-family: "SF Mono","Menlo","Consolas",monospace;
+        font-size: 0.8rem; line-height: 1.5;
+        white-space: pre-wrap; word-break: break-word;
+        border: 1px solid #1a3326;
+      }
+      .log-panel::-webkit-scrollbar { width: 5px; }
+      .log-panel::-webkit-scrollbar-track { background: transparent; }
+      .log-panel::-webkit-scrollbar-thumb { background: #2c5040; border-radius: 4px; }
+      .log-line { margin: 0 0 3px; }
+      .log-line.info  { color: #86efac; }
+      .log-line.warn  { color: #fde68a; }
+      .log-line.error { color: #fca5a5; }
+      .log-line .ts   { color: #4d7a65; margin-right: 8px; font-size: 0.77rem; }
+      .log-line .tag  { display: inline-block; min-width: 72px; margin-right: 8px; color: #7abfa0; font-weight: 600; }
+      .log-toolbar {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 10px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--neutral-edge);
+      }
+      .log-toolbar h2 { margin: 0; }
+      .log-toolbar button { padding: 5px 12px; background: #2a4a3d; font-size: 0.82rem; }
+      .log-toolbar button:hover:enabled { background: #1e3630; }
+
+      /* ── Findings toolbar ────────────────────────────────── */
+      .findings-toolbar {
+        display: flex; flex-wrap: wrap; align-items: center;
+        gap: 10px; margin-bottom: 16px; padding: 12px 16px;
+        background: var(--neutral-bg);
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--edge);
+      }
+      .findings-toolbar-main {
+        display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+        width: 100%;
+      }
+      .findings-toolbar-feedback {
+        display: flex; flex-direction: column; align-items: flex-start;
+        gap: 8px; width: 100%;
+      }
+      .findings-toolbar .spacer { flex: 1; }
+      .findings-toolbar label {
+        display: flex; align-items: center; gap: 6px;
+        color: var(--ink-2); font-size: 0.88rem; cursor: pointer;
+      }
+      .findings-toolbar label input[type=checkbox] { width: auto; accent-color: var(--primary); }
+      .sort-group { display: flex; gap: 6px; }
+      .sort-group button { padding: 6px 12px; font-size: 0.82rem; background: #2a4a3d; }
+      .sort-group button:hover:enabled { background: #1e3630; }
+      #findingCount { font-size: 0.88rem; color: var(--muted); white-space: nowrap; font-weight: 500; }
+
+      /* ── Template panel ──────────────────────────────────── */
+      .template-panel {
+        margin: 24px 0 20px;
+        padding: 22px 0 0;
+        background: transparent;
+        border: 0;
+        border-top: 1px solid var(--neutral-edge);
+      }
+      .template-note {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.86rem;
+        line-height: 1.55;
+      }
+      .template-meta {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px 16px;
+        margin-top: 14px;
+        font-size: 0.86rem;
+      }
+      .template-meta > div {
+        padding: 12px 14px;
+        border-radius: var(--radius-sm);
+        background: var(--neutral-bg);
+        border: 1px solid var(--neutral-edge);
+      }
+      .template-meta strong { display: block; margin-bottom: 3px; color: var(--ink-2); font-size: 0.82rem; }
+      .template-meta span { color: var(--muted); overflow-wrap: anywhere; line-height: 1.45; }
+
+      /* ── Finding cards ───────────────────────────────────── */
+      .finding-card {
+        background: var(--card);
+        border: 1px solid var(--edge);
+        border-radius: var(--radius-sm);
+        margin-bottom: 8px;
+        overflow: hidden;
+        transition: opacity 0.18s, box-shadow 0.18s;
+      }
+      .finding-card:hover { box-shadow: 0 2px 8px rgba(10,102,68,0.08); }
+      .finding-card.excluded { opacity: 0.42; }
+      .finding-card.drag-over {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(10,102,68,0.22);
+      }
+
+      .card-header {
+        display: flex; align-items: center; gap: 8px;
+        padding: 10px 14px; cursor: pointer;
+        background: var(--neutral-bg);
+        user-select: none;
+        transition: background var(--transition);
+      }
+      .card-header:hover { background: var(--primary-subtle); }
+      .drag-handle {
+        color: var(--muted-light); font-size: 1rem; cursor: grab;
+        padding: 2px 4px; flex-shrink: 0;
+        transition: color var(--transition);
+      }
+      .drag-handle:hover { color: var(--primary); }
+      .drag-handle:active { cursor: grabbing; }
+      .exclude-cb { width: auto !important; flex-shrink: 0; cursor: pointer; accent-color: var(--primary); }
+      .card-num { font-size: 0.76rem; color: var(--muted-light); min-width: 22px; text-align: right; flex-shrink: 0; font-weight: 600; }
+
+      .sev-badge {
+        font-size: 0.7rem; font-weight: 700; padding: 3px 9px;
+        border-radius: 100px; color: #fff; flex-shrink: 0; text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .sev-critical { background: #b91c1c; }
+      .sev-high     { background: #dc2626; }
+      .sev-medium   { background: #ea580c; }
+      .sev-low      { background: #ca8a04; }
+      .sev-informational { background: #2563eb; }
+      .sev-unknown  { background: #6b7280; }
+
+      .card-title { flex: 1; font-size: 0.92rem; font-weight: 600; color: var(--ink); line-height: 1.35; }
+      .card-title.excluded-label { text-decoration: line-through; color: var(--muted); }
+      .toggle-btn {
+        background: transparent; color: var(--muted-light); padding: 4px 8px;
+        font-size: 0.8rem; border-radius: 6px; flex-shrink: 0;
+        transition: background var(--transition), color var(--transition);
+      }
+      .toggle-btn:hover:enabled { background: var(--primary-subtle-2); color: var(--primary); }
+
+      .card-body {
+        padding: 16px;
+        border-top: 1px solid var(--neutral-edge);
+        display: none;
+        background: #fdfffd;
+      }
+      .card-body.open { display: block; }
+
+      .field-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 16px;
+        margin-bottom: 12px;
+      }
+      .field-grid .field { margin-bottom: 0; }
+      .field-full { grid-column: 1 / -1; }
+      .field-grid label { font-size: 0.8rem; color: var(--muted); margin-bottom: 2px; font-weight: 600; }
+      .field-grid input, .field-grid select, .field-grid textarea {
+        font-size: 0.86rem; padding: 7px 10px;
+      }
+      .field-grid textarea { min-height: 64px; }
+
+      .raw-toggle {
+        background: #2a4a3d; font-size: 0.8rem;
+        padding: 5px 12px; border-radius: 6px; margin-top: 10px;
+      }
+      .raw-toggle:hover:enabled { background: #1e3630; }
+      .raw-output {
+        margin-top: 8px; padding: 12px; border-radius: var(--radius-sm);
+        background: #0d1f17; color: #d4ede0;
+        font-family: "SF Mono","Menlo","Consolas",monospace;
+        font-size: 0.76rem; white-space: pre-wrap; word-break: break-all;
+        max-height: 240px; overflow-y: auto;
+        border: 1px solid #1a3326;
+      }
+
+      .findings-footer {
+        display: flex; justify-content: flex-end; margin-top: 16px; padding-top: 14px;
+        border-top: 1px dashed var(--edge);
+      }
+
+      .generate-actions { display: flex; flex-direction: column; align-items: flex-end; }
+      .generate-actions-top { display: flex; align-items: center; flex-shrink: 0; }
+
+      #generateStatus { margin-top: 12px; text-align: right; }
+      #generateStatusTop { margin: 0; }
+      #generateDownload { margin-top: 10px; font-size: 0.92rem; }
+      #generateDownloadTop { margin: 0; font-size: 0.92rem; }
+      #generateDownload a, #generateDownloadTop a {
+        color: var(--primary); font-weight: 600; text-decoration: none;
+      }
+      #generateDownload a:hover, #generateDownloadTop a:hover { text-decoration: underline; }
+
+      /* ── History ─────────────────────────────────────────── */
+      .history-toolbar {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 14px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--neutral-edge);
+      }
+      .history-toolbar button { padding: 7px 16px; font-size: 0.88rem; }
+
+      table.history-tbl {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 8px;
+        font-size: 0.88rem;
+      }
+      table.history-tbl th {
+        text-align: left;
+        padding: 0 16px 8px;
+        background: transparent;
+        color: var(--muted);
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        border-bottom: 2px solid var(--edge);
+      }
+      table.history-tbl td {
+        padding: 13px 16px;
+        border-top: 1px solid var(--neutral-edge);
+        border-bottom: 1px solid var(--neutral-edge);
+        vertical-align: middle;
+        background: #fff;
+      }
+      table.history-tbl tr td:first-child {
+        border-left: 1px solid var(--neutral-edge);
+        border-radius: 10px 0 0 10px;
+      }
+      table.history-tbl tr td:last-child {
+        border-right: 1px solid var(--neutral-edge);
+        border-radius: 0 10px 10px 0;
+      }
+      table.history-tbl a { color: var(--primary); font-weight: 600; text-decoration: none; }
+      table.history-tbl a:hover { text-decoration: underline; }
+      .history-primary-row td { box-shadow: 0 2px 8px rgba(10,102,68,0.05); }
+      .history-cell-main { font-weight: 600; color: var(--ink); line-height: 1.4; overflow-wrap: anywhere; }
+      .history-cell-sub { margin-top: 2px; color: var(--muted); font-size: 0.8rem; line-height: 1.4; }
+      .history-link { display: inline-flex; align-items: center; gap: 6px; line-height: 1.35; overflow-wrap: anywhere; }
+      .history-detail-row td { padding: 0 0 6px; background: transparent; border: 0; box-shadow: none; }
+      .history-detail-panel {
+        margin: 4px 10px 0;
+        padding: 14px 16px;
+        border-radius: var(--radius);
+        background: var(--neutral-bg);
+        border: 1px solid var(--neutral-edge);
+      }
+      .history-findings {
+        margin-top: 10px;
+        border: 1px solid var(--neutral-edge);
+        border-radius: var(--radius-sm);
+        background: #fff;
+        padding: 10px 14px;
+      }
+      .history-findings summary { cursor: pointer; color: var(--primary); font-weight: 600; font-size: 0.9rem; }
+      .history-findings-list { margin-top: 12px; }
+      .history-findings + .history-findings { margin-top: 10px; }
+      .history-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 8px; }
+      .history-actions button { background: #2a4a3d; font-size: 0.84rem; padding: 7px 14px; }
+      .history-actions button:hover:enabled { background: #1e3630; }
+
+      #historyEmpty { color: var(--muted); text-align: center; padding: 36px 0; font-style: italic; font-size: 0.95rem; }
+
+      /* ── Responsive ──────────────────────────────────────── */
+      @media (max-width: 1000px) {
+        .analyze-top-grid { grid-template-columns: 1fr; }
+      }
+      @media (max-width: 780px) {
+        .grid, .field-grid, .template-meta { grid-template-columns: 1fr; }
+        .field-full { grid-column: 1; }
+        .tab-btn { padding: 8px 14px; font-size: 0.86rem; }
+        .inline-row { flex-direction: column; }
+        table.history-tbl { display: block; overflow-x: auto; }
+        .history-detail-panel { margin: 4px 0 0; }
+        .wrap { padding: 0 14px; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="app-header-inner">
+        <div class="app-logo">📋</div>
+        <span class="app-name">Report Tool</span>
+        <span class="app-tagline">— Scan analysis &amp; DOCX generation</span>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <nav class="tab-nav">
+        <button class="tab-btn active" data-tab="analyze">Analyze</button>
+        <button class="tab-btn" data-tab="history">History</button>
+      </nav>
+
+      <!-- Analyze Tab -->
+      <div id="tab-analyze" class="tab-panel active">
+        <section class="card">
+          <div class="analyze-top-grid">
+            <div class="section-shell">
+              <div class="section-block">
+                <p class="section-kicker">Input</p>
+                <div class="field">
+                  <label for="scanFile">Input scan file (.txt/.csv/.xlsx)</label>
+                  <input id="scanFile" type="file" />
+                </div>
+              </div>
+            </div>
+
+            <div class="section-shell">
+              <div class="section-block">
+                <p class="section-kicker">Context</p>
+                <div class="field">
+                  <label for="context">Client context (optional)</label>
+                  <textarea id="context" placeholder="Client: Example Corp&#10;Scope: Internal VAPT"></textarea>
+                  <div class="helper-callout">
+                    <small>For cloud models, replace client names, IPs, hostnames, emails, URLs, usernames, and ticket IDs with placeholders such as <code>[CLIENT_1]</code>, <code>[ASSET_1]</code>, and <code>[URL_1]</code> before submitting.</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-shell section-divider">
+            <div class="section-block">
+              <p class="section-kicker">Model Setup</p>
+              <div class="grid">
+                <div class="field">
+                  <label for="provider">LLM provider</label>
+                  <select id="provider">
+                    <option value="local" selected>Local (LM Studio/Ollama)</option>
+                    <option value="openrouter">OpenRouter (cloud, sanitized)</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="model">Model</label>
+                  <div class="inline-row">
+                    <input id="model" type="text" placeholder="qwen3.5-9b" />
+                    <button id="fetchModelsBtn" type="button">Fetch models</button>
+                  </div>
+                  <select id="modelSelect" class="hidden"></select>
+                </div>
+              </div>
+
+              <div class="grid">
+                <div class="field">
+                  <label for="baseUrl">Base URL</label>
+                  <input id="baseUrl" type="text" placeholder="http://127.0.0.1:1234/v1" />
+                </div>
+                <div class="field">
+                  <label for="apiKey">API key (session only)</label>
+                  <input id="apiKey" type="password" placeholder="Required for OpenRouter" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="template-panel">
+            <p class="section-kicker">Template</p>
+            <div class="field">
+              <label for="templateFile">Base report template (.docx)</label>
+              <input
+                id="templateFile"
+                type="file"
+                accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              />
+            </div>
+            <p class="template-note">
+              Upload a template once to save it as the server default for later report generation.
+            </p>
+            <div class="template-meta">
+              <div>
+                <strong>Selected upload:</strong>
+                <span id="selectedTemplateState">No new template selected.</span>
+              </div>
+              <div>
+                <strong>Saved template:</strong>
+                <span id="activeTemplateState">Loading template status...</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button id="analyzeBtn">Analyze Input</button>
+            <button id="cancelAnalyzeBtn" class="danger" disabled>Cancel</button>
+          </div>
+
+          <div id="status" class="status">Ready.</div>
+          <progress id="progressBar" value="0" max="1"></progress>
+          <div class="progress-wrap" id="progressWrap">
+            <div class="progress-bar-inner" id="progressBarInner"></div>
+          </div>
+          <div id="progressDetail" class="progress-detail hidden"></div>
+        </section>
+
+        <section class="card">
+          <div class="log-toolbar">
+            <h2>Activity log</h2>
+            <button id="clearLogBtn" type="button">Clear</button>
+          </div>
+          <div id="logPanel" class="log-panel" aria-live="polite"></div>
+        </section>
+
+        <section id="currentRunSection" class="card hidden">
+          <h2>Current Report Draft</h2>
+          <div class="findings-toolbar">
+            <div class="findings-toolbar-main">
+              <span id="findingCount">No findings yet.</span>
+              <div class="sort-group">
+                <button id="sortSeverityBtn">Sort Severity</button>
+                <button id="sortNameBtn">Sort Name</button>
+                <button id="resetOrderBtn">Reset Order</button>
+              </div>
+              <div class="spacer"></div>
+              <label>
+                <input type="checkbox" id="includeSummaryTable" />
+                Include summary table
+              </label>
+              <div class="generate-actions-top">
+                <button id="generateBtnTop">Generate DOCX</button>
+              </div>
+            </div>
+            <div class="findings-toolbar-feedback">
+              <div id="generateStatusTop" class="status hidden"></div>
+              <div id="generateDownloadTop"></div>
+            </div>
+          </div>
+
+          <div id="findingsList"></div>
+          <details id="falsePositivesSection" class="history-findings hidden">
+            <summary id="falsePositivesSummary">View false positives</summary>
+            <div id="falsePositivesList" class="history-findings-list"></div>
+          </details>
+
+          <div class="findings-footer">
+            <div class="generate-actions">
+              <button id="generateBtnBottom">Generate DOCX</button>
+              <div id="generateStatus" class="status hidden"></div>
+              <div id="generateDownload"></div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- History Tab -->
+      <div id="tab-history" class="tab-panel">
+        <section class="card">
+          <div class="history-toolbar">
+            <h2>Report History</h2>
+            <button id="refreshHistoryBtn" type="button">Refresh</button>
+          </div>
+          <table class="history-tbl" id="historyTable">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Input</th>
+                <th>Findings</th>
+                <th>Report</th>
+                <th>Logs</th>
+              </tr>
+            </thead>
+            <tbody id="historyBody"></tbody>
+          </table>
+          <p id="historyEmpty" class="hidden">No reports generated yet.</p>
+        </section>
+      </div>
+    </main>
+
+    <footer style="text-align:center; padding: 20px 0 28px; color: var(--muted-light); font-size: 0.8rem;">
+      Report Tool Runtime
+    </footer>
+
+    <script>
+      // Element refs
+      const scanFileEl       = document.getElementById("scanFile");
+      const contextEl        = document.getElementById("context");
+      const providerEl       = document.getElementById("provider");
+      const modelEl          = document.getElementById("model");
+      const baseUrlEl        = document.getElementById("baseUrl");
+      const apiKeyEl         = document.getElementById("apiKey");
+      const modelSelectEl    = document.getElementById("modelSelect");
+      const fetchModelsBtn   = document.getElementById("fetchModelsBtn");
+      const templateFileEl   = document.getElementById("templateFile");
+      const analyzeBtn       = document.getElementById("analyzeBtn");
+      const cancelAnalyzeBtn = document.getElementById("cancelAnalyzeBtn");
+      const statusEl         = document.getElementById("status");
+      const progressBarEl    = document.getElementById("progressBar");
+      const progressBarInner = document.getElementById("progressBarInner");
+      const progressDetailEl = document.getElementById("progressDetail");
+      const logPanelEl       = document.getElementById("logPanel");
+      const clearLogBtn      = document.getElementById("clearLogBtn");
+      const currentRunSection= document.getElementById("currentRunSection");
+      const findingCountEl   = document.getElementById("findingCount");
+      const findingsListEl   = document.getElementById("findingsList");
+      const generateBtnTop   = document.getElementById("generateBtnTop");
+      const generateBtnBottom= document.getElementById("generateBtnBottom");
+      const generateStatusTopEl = document.getElementById("generateStatusTop");
+      const generateStatusEl = document.getElementById("generateStatus");
+      const generateDownloadTopEl = document.getElementById("generateDownloadTop");
+      const generateDownloadEl = document.getElementById("generateDownload");
+      const falsePositivesSectionEl = document.getElementById("falsePositivesSection");
+      const falsePositivesSummaryEl = document.getElementById("falsePositivesSummary");
+      const falsePositivesListEl = document.getElementById("falsePositivesList");
+      const selectedTemplateStateEl = document.getElementById("selectedTemplateState");
+      const activeTemplateStateEl = document.getElementById("activeTemplateState");
+      const includeSummaryTableEl = document.getElementById("includeSummaryTable");
+      const sortSeverityBtn  = document.getElementById("sortSeverityBtn");
+      const sortNameBtn      = document.getElementById("sortNameBtn");
+      const resetOrderBtn    = document.getElementById("resetOrderBtn");
+      const refreshHistoryBtn= document.getElementById("refreshHistoryBtn");
+      const historyBody      = document.getElementById("historyBody");
+      const historyEmptyEl   = document.getElementById("historyEmpty");
+
+      // State
+      let analysisId = "";
+      let analyzeJobId = "";
+      let generateJobId = "";
+      let analyzePollTimer = null;
+      let generatePollTimer = null;
+      let lastProgressMessage = "";
+      let currentAnalysisData = null;
+      let currentFindings = [];
+      let currentFalsePositives = [];
+      let originalFindings = [];
+      let rawTexts = [];
+      let dragSrcIdx = null;
+      let activeTemplateState = { has_template: false, active: null };
+
+      const SEV_ORDER = ["Critical", "High", "Medium", "Low", "Informational"];
+
+      const BASE_URL_DEFAULTS = {
+        local: "http://127.0.0.1:1234/v1",
+        openrouter: "https://openrouter.ai/api/v1",
+      };
+      const LOCAL_STORAGE_KEY = "report_tool_runtime_settings";
+      const SESSION_STATE_KEY = "report_tool_runtime_session_state";
+
+      // Tab navigation
+      function switchTab(name) {
+        document.querySelectorAll(".tab-btn").forEach((btn) => {
+          btn.classList.toggle("active", btn.dataset.tab === name);
+        });
+        document.querySelectorAll(".tab-panel").forEach((panel) => {
+          panel.classList.toggle("active", panel.id === "tab-" + name);
+        });
+        if (name === "history") loadHistory();
+      }
+
+      document.querySelectorAll(".tab-btn").forEach((btn) => {
+        btn.addEventListener("click", () => { if (!btn.disabled) switchTab(btn.dataset.tab); });
+      });
+
+      // Logging
+      function logMessage(level, tag, message) {
+        const ts = new Date().toLocaleTimeString();
+        const line = document.createElement("div");
+        line.className = "log-line " + level;
+        const tsEl = document.createElement("span"); tsEl.className = "ts"; tsEl.textContent = ts;
+        const tagEl = document.createElement("span"); tagEl.className = "tag"; tagEl.textContent = "[" + tag + "]";
+        const msgEl = document.createElement("span"); msgEl.textContent = message;
+        line.appendChild(tsEl); line.appendChild(tagEl); line.appendChild(msgEl);
+        logPanelEl.appendChild(line);
+        logPanelEl.scrollTop = logPanelEl.scrollHeight;
+      }
+      function logInfo(tag, msg)  { logMessage("info",  tag, msg); }
+      function logWarn(tag, msg)  { logMessage("warn",  tag, msg); }
+      function logError(tag, msg) { logMessage("error", tag, msg); }
+
+      function setStatus(msg, level) {
+        statusEl.textContent = msg;
+        statusEl.classList.remove("error", "warn", "success");
+        if (level) statusEl.classList.add(level);
+      }
+
+      function setProgressDetail(detailText) {
+        const text = String(detailText || "").trim();
+        progressDetailEl.textContent = text;
+        progressDetailEl.classList.toggle("hidden", !text);
+      }
+
+      function getProgressDetailText(progress) {
+        const detail = progress && progress.detail && typeof progress.detail === "object" ? progress.detail : null;
+        if (!detail) return "";
+        if (Array.isArray(detail.active_items) && detail.active_items.length > 1) {
+          return "Current cloud batch: " + detail.active_items.join("; ");
+        }
+        if (detail.active_label) {
+          return "Current vulnerability: " + detail.active_label;
+        }
+        return "";
+      }
+
+      function reportError(tag, err) {
+        const message = (err && (err.message || err.error)) || (err ? String(err) : "Unknown error");
+        logError(tag, message);
+        setStatus(tag + ": " + message, "error");
+        setProgressDetail("");
+      }
+
+      window.addEventListener("error", (ev) => {
+        logError("window", (ev.error ? (ev.error.stack || ev.error.message) : ev.message) || "Unknown JS error");
+      });
+      window.addEventListener("unhandledrejection", (ev) => {
+        const r = ev.reason;
+        logError("promise", (r && (r.stack || r.message)) || (r ? String(r) : "Unhandled rejection"));
+      });
+
+      // Settings
+      function readSessionState() {
+        try {
+          const raw = sessionStorage.getItem(SESSION_STATE_KEY);
+          const p = raw ? JSON.parse(raw) : {};
+          if (!p.api_keys || typeof p.api_keys !== "object") p.api_keys = {};
+          if (!p.models   || typeof p.models   !== "object") p.models   = {};
+          return p;
+        } catch (_) { return { api_keys: {}, models: {} }; }
+      }
+      function writeSessionState(s) { sessionStorage.setItem(SESSION_STATE_KEY, JSON.stringify(s)); }
+      function rememberProviderSecrets(provider) {
+        if (!provider) return;
+        const s = readSessionState();
+        s.api_keys[provider] = apiKeyEl.value || "";
+        s.models[provider]   = modelEl.value  || "";
+        writeSessionState(s);
+      }
+      function loadProviderSecrets(provider) {
+        const s = readSessionState();
+        apiKeyEl.value = (s.api_keys && s.api_keys[provider]) || "";
+        modelEl.value  = (s.models   && s.models[provider])   || "";
+      }
+
+      function readLocalSettings() {
+        try { const r = localStorage.getItem(LOCAL_STORAGE_KEY); return r ? JSON.parse(r) : {}; }
+        catch (e) { logWarn("settings", "Local cache parse failed: " + (e.message || e)); return {}; }
+      }
+      function writeLocalSettings(s) {
+        try { localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(s)); }
+        catch (e) { logWarn("settings", "Local cache write failed: " + (e.message || e)); }
+      }
+      function collectSettings() {
+        return { provider: providerEl.value, model: modelEl.value, base_url: baseUrlEl.value,
+                 context: contextEl.value };
+      }
+      function applySettings(settings) {
+        if (!settings || typeof settings !== "object") return;
+        providerEl.value = settings.provider || providerEl.value || "local";
+        if (settings.model) modelEl.value = settings.model;
+        const provider = providerEl.value;
+        const incomingUrl = (settings.base_url || "").trim();
+        if (incomingUrl) baseUrlEl.value = incomingUrl;
+        else if (!baseUrlEl.value) baseUrlEl.value = BASE_URL_DEFAULTS[provider] || BASE_URL_DEFAULTS.local;
+        contextEl.value = settings.context || contextEl.value || "";
+      }
+
+      function isDocxFile(file) {
+        return Boolean(file && /\.docx$/i.test((file.name || "").trim()));
+      }
+
+      function updateSelectedTemplateState() {
+        const file = templateFileEl.files && templateFileEl.files[0];
+        selectedTemplateStateEl.textContent = file ? file.name : "No new template selected.";
+        updateGenerateButtonState();
+      }
+
+      function updateActiveTemplateState(templateState) {
+        activeTemplateState =
+          templateState && typeof templateState === "object"
+            ? {
+                has_template: Boolean(templateState.has_template),
+                active: templateState.active || null,
+              }
+            : { has_template: false, active: null };
+
+        if (activeTemplateState.active && activeTemplateState.active.name) {
+          activeTemplateStateEl.textContent = activeTemplateState.active.name;
+          updateGenerateButtonState();
+          return;
+        }
+
+        activeTemplateStateEl.textContent =
+          "None yet. Upload a .docx base template before generating.";
+        updateGenerateButtonState();
+      }
+
+      async function refreshTemplateState() {
+        try {
+          const resp = await fetch("/api/settings");
+          const data = await resp.json().catch(() => ({}));
+          if (!resp.ok) throw new Error(data.error || "HTTP " + resp.status);
+          updateActiveTemplateState(data.template || {});
+        } catch (err) {
+          logWarn("template", "Template status refresh failed: " + (err.message || err));
+          updateGenerateButtonState();
+        }
+      }
+
+      function updateGenerateButtonState() {
+        const hasTemplateSelected = Boolean(templateFileEl.files && templateFileEl.files[0]);
+        const hasTemplateAvailable = hasTemplateSelected || Boolean(activeTemplateState.has_template);
+        const hasFindings = Array.isArray(currentFindings) && currentFindings.length > 0;
+        const disabled = !hasTemplateAvailable || !hasFindings;
+        generateBtnTop.disabled = disabled;
+        generateBtnBottom.disabled = disabled;
+      }
+
+      let saveTimer = null;
+      function scheduleSaveSettings() {
+        if (saveTimer) clearTimeout(saveTimer);
+        saveTimer = setTimeout(saveSettingsRemote, 250);
+      }
+      async function saveSettingsRemote() {
+        const settings = collectSettings();
+        writeLocalSettings(settings);
+        try {
+          const resp = await fetch("/api/settings", {
+            method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(settings),
+          });
+          if (!resp.ok) { const d = await resp.json().catch(() => ({})); throw new Error(d.error || "HTTP " + resp.status); }
+        } catch (err) { reportError("settings", err); }
+      }
+
+      function setProgress(current, total, message, detailText) {
+        const st = Math.max(1, Number(total) || 1);
+        const sc = Math.max(0, Number(current) || 0);
+        progressBarEl.max = st; progressBarEl.value = Math.min(sc, st);
+        const pct = Math.round(Math.min(sc / st, 1) * 100);
+        if (progressBarInner) progressBarInner.style.width = pct + "%";
+        setProgressDetail(detailText);
+        if (message) {
+          setStatus(message);
+          if (message !== lastProgressMessage) { logInfo("progress", message); lastProgressMessage = message; }
+        }
+      }
+
+      function setModelOptions(models) {
+        if (!Array.isArray(models) || models.length === 0) {
+          modelSelectEl.classList.add("hidden"); modelSelectEl.innerHTML = ""; return;
+        }
+        modelSelectEl.innerHTML = "";
+        for (const id of models) {
+          const o = document.createElement("option"); o.value = id; o.textContent = id;
+          modelSelectEl.appendChild(o);
+        }
+        if (modelEl.value && models.includes(modelEl.value)) modelSelectEl.value = modelEl.value;
+        modelSelectEl.classList.remove("hidden");
+      }
+
+      async function fetchModels() {
+        if (providerEl.value === "openrouter" && !apiKeyEl.value.trim()) {
+          reportError("models", new Error("OpenRouter API key required to list models.")); return;
+        }
+        fetchModelsBtn.disabled = true;
+        setStatus("Fetching model list...");
+        logInfo("models", "Requesting models for " + providerEl.value);
+        try {
+          const resp = await fetch("/api/models", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ provider: providerEl.value, base_url: baseUrlEl.value, api_key: apiKeyEl.value }),
+          });
+          const data = await resp.json().catch(() => ({}));
+          if (!resp.ok || !data.ok) throw new Error(data.error || "HTTP " + resp.status + " fetching models");
+          const models = Array.isArray(data.models) ? data.models : [];
+          setModelOptions(models);
+          setStatus("Loaded " + models.length + " models.", "success");
+          logInfo("models", "Loaded " + models.length + " models.");
+        } catch (err) { setModelOptions([]); reportError("models", err); }
+        finally { fetchModelsBtn.disabled = false; }
+      }
+
+      async function loadConfigDefaults() {
+        try {
+          applySettings(readLocalSettings());
+          const resp = await fetch("/api/settings");
+          if (!resp.ok) { const d = await resp.json().catch(() => ({})); throw new Error(d.error || "HTTP " + resp.status); }
+          const data = await resp.json();
+          const defs = (data && data.defaults && data.defaults.base_urls) ? data.defaults.base_urls : {};
+          BASE_URL_DEFAULTS.local      = defs.local      || BASE_URL_DEFAULTS.local;
+          BASE_URL_DEFAULTS.openrouter = defs.openrouter || BASE_URL_DEFAULTS.openrouter;
+          applySettings(data.settings || {});
+          updateActiveTemplateState(data.template || {});
+          writeLocalSettings(collectSettings());
+          logInfo("settings", "Loaded persisted settings (provider=" + providerEl.value + ", model=" + (modelEl.value || "<unset>") + ")");
+        } catch (err) {
+          updateActiveTemplateState({ has_template: false, active: null });
+          reportError("settings", err);
+        }
+        finally {
+          if (!baseUrlEl.value) baseUrlEl.value = BASE_URL_DEFAULTS[providerEl.value] || BASE_URL_DEFAULTS.local;
+          loadProviderSecrets(providerEl.value);
+          providerEl.dataset.previousProvider = providerEl.value;
+          rememberProviderSecrets(providerEl.value);
+        }
+      }
+
+      fetchModelsBtn.addEventListener("click", fetchModels);
+      modelSelectEl.addEventListener("change", () => {
+        modelEl.value = modelSelectEl.value; rememberProviderSecrets(providerEl.value); scheduleSaveSettings();
+      });
+      providerEl.addEventListener("change", () => {
+        const prev = providerEl.dataset.previousProvider || "local";
+        const next = providerEl.value;
+        if (prev !== next) rememberProviderSecrets(prev);
+        baseUrlEl.value = BASE_URL_DEFAULTS[next] || BASE_URL_DEFAULTS.local;
+        loadProviderSecrets(next);
+        setModelOptions([]);
+        providerEl.dataset.previousProvider = next;
+        logInfo("provider", "Switched " + prev + " -> " + next + "; URL=" + baseUrlEl.value + ", model=" + (modelEl.value || "<cleared>"));
+        rememberProviderSecrets(next);
+        scheduleSaveSettings();
+      });
+      contextEl.addEventListener("input", scheduleSaveSettings);
+      baseUrlEl.addEventListener("input", scheduleSaveSettings);
+      modelEl.addEventListener("input",   () => { rememberProviderSecrets(providerEl.value); scheduleSaveSettings(); });
+      apiKeyEl.addEventListener("input",  () => rememberProviderSecrets(providerEl.value));
+      clearLogBtn.addEventListener("click", () => { logPanelEl.innerHTML = ""; });
+
+      loadConfigDefaults();
+      updateSelectedTemplateState();
+
+      function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => { const d = String(reader.result || ""); const sp = d.split(","); resolve(sp.length > 1 ? sp[1] : ""); };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
+
+      templateFileEl.addEventListener("change", () => {
+        updateSelectedTemplateState();
+        const file = templateFileEl.files && templateFileEl.files[0];
+        if (!file) return;
+        if (!isDocxFile(file)) {
+          setGenerateStatus("Error: Base template must be a .docx file.", "error");
+          logError("template", "Rejected non-DOCX template selection: " + file.name);
+          return;
+        }
+        setGenerateStatus("Template selected: " + file.name, "success");
+        logInfo("template", "Selected " + file.name + " as the next saved template.");
+      });
+
+      // Poll helpers
+      function stopAnalyzePoll()  { if (analyzePollTimer)  { clearTimeout(analyzePollTimer);  analyzePollTimer  = null; } }
+      function stopGeneratePoll() { if (generatePollTimer) { clearTimeout(generatePollTimer); generatePollTimer = null; } }
+
+      async function pollAnalyzeJob() {
+        if (!analyzeJobId) return;
+        try {
+          const resp = await fetch("/api/analyze/" + analyzeJobId);
+          const data = await resp.json().catch(() => ({}));
+          if (!resp.ok) throw new Error(data.error || "HTTP " + resp.status + " polling analyze");
+          const progress = data.progress || {};
+          setProgress(progress.current || 0, progress.total || 1, progress.message, getProgressDetailText(progress));
+          if (data.status === "running") { analyzePollTimer = setTimeout(pollAnalyzeJob, 700); return; }
+          stopAnalyzePoll();
+          analyzeBtn.disabled = false; cancelAnalyzeBtn.disabled = true;
+          if (data.status === "completed") {
+            const result = data.result || {};
+            analysisId = result.analysis_id || "";
+            renderFindings(result);
+            setProgress(1, 1, "Analysis complete \u2014 review findings below.");
+            setStatus("Analysis complete \u2014 review findings below.", "success");
+            setProgressDetail("");
+            const llmCallCount = Number(result.llm_interaction_count || 0);
+            logInfo(
+              "analyze",
+              "Completed: "
+                + (result.finding_count || 0)
+                + " findings, "
+                + (result.false_positive_count || 0)
+                + " FPs, "
+                + llmCallCount
+                + " LLM call"
+                + (llmCallCount === 1 ? "" : "s")
+                + ".",
+            );
+            return;
+          }
+          if (data.status === "canceled") { setStatus("Analysis canceled.", "warn"); setProgressDetail(""); logWarn("analyze", "Canceled by user."); }
+          else { reportError("analyze", new Error(data.error || "Analysis ended unexpectedly")); }
+        } catch (err) {
+          stopAnalyzePoll(); analyzeBtn.disabled = false; cancelAnalyzeBtn.disabled = true; reportError("analyze", err);
+        }
+      }
+
+      analyzeBtn.addEventListener("click", async () => {
+        const file = scanFileEl.files && scanFileEl.files[0];
+        if (!file) { reportError("analyze", new Error("Pick an input file first.")); return; }
+        if (providerEl.value === "openrouter" && !apiKeyEl.value.trim()) {
+          reportError("analyze", new Error("OpenRouter API key missing. Provide it in the form before analyzing.")); return;
+        }
+        if (!modelEl.value.trim()) { reportError("analyze", new Error("Model name required before analyzing.")); return; }
+        stopAnalyzePoll();
+        analyzeJobId = ""; analysisId = "";
+        analyzeBtn.disabled = true; cancelAnalyzeBtn.disabled = false;
+        currentRunSection.classList.add("hidden");
+        currentAnalysisData = null;
+        currentFindings = [];
+        currentFalsePositives = [];
+        originalFindings = [];
+        findingsListEl.innerHTML = "";
+        falsePositivesListEl.innerHTML = "";
+        falsePositivesSectionEl.classList.add("hidden");
+        [generateStatusTopEl, generateStatusEl].forEach((el) => {
+          el.textContent = "";
+          el.className = "status hidden";
+        });
+        generateDownloadTopEl.innerHTML = "";
+        generateDownloadEl.innerHTML = "";
+        updateFindingCount();
+        updateGenerateButtonState();
+        lastProgressMessage = "";
+        setProgress(0, 1, "Starting analysis...");
+        logInfo("analyze", "Starting: file=" + file.name + ", provider=" + providerEl.value + ", model=" + modelEl.value);
+        try {
+          const fileContentBase64 = await fileToBase64(file);
+          const resp = await fetch("/api/analyze", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              filename: file.name, file_content_base64: fileContentBase64,
+              client_context: contextEl.value,
+              provider: providerEl.value, model: modelEl.value,
+              base_url: baseUrlEl.value, api_key: apiKeyEl.value,
+            }),
+          });
+          await saveSettingsRemote();
+          const data = await resp.json().catch(() => ({}));
+          if (!resp.ok) throw new Error(data.error || "HTTP " + resp.status + " starting analysis");
+          analyzeJobId = data.job_id;
+          logInfo("analyze", "Job started: " + analyzeJobId);
+          pollAnalyzeJob();
+        } catch (err) { analyzeBtn.disabled = false; cancelAnalyzeBtn.disabled = true; reportError("analyze", err); }
+      });
+
+      cancelAnalyzeBtn.addEventListener("click", async () => {
+        if (!analyzeJobId) return;
+        cancelAnalyzeBtn.disabled = true;
+        try {
+          const resp = await fetch("/api/analyze/" + analyzeJobId + "/cancel", { method: "POST" });
+          const data = await resp.json().catch(() => ({}));
+          if (!resp.ok) throw new Error(data.error || "HTTP " + resp.status + " canceling analysis");
+          logWarn("analyze", "Cancel signal sent.");
+        } catch (err) { reportError("analyze", err); }
+      });
+
+      // Findings rendering
+      function sevClass(sev) {
+        const s = (sev || "").toLowerCase();
+        if (s === "critical")      return "sev-critical";
+        if (s === "high")          return "sev-high";
+        if (s === "medium")        return "sev-medium";
+        if (s === "low")           return "sev-low";
+        if (s === "informational") return "sev-informational";
+        return "sev-unknown";
+      }
+      function sevRank(sev) {
+        const idx = SEV_ORDER.findIndex((s) => s.toLowerCase() === (sev || "").toLowerCase());
+        return idx === -1 ? SEV_ORDER.length : idx;
+      }
+
+      function renderFindings(result) {
+        currentAnalysisData = result.data || {};
+        rawTexts = Array.isArray(result.raw_texts) ? result.raw_texts : [];
+        const findings = Array.isArray(currentAnalysisData.findings) ? currentAnalysisData.findings : [];
+        currentFalsePositives = Array.isArray(currentAnalysisData.false_positives)
+          ? currentAnalysisData.false_positives
+          : [];
+        currentFindings  = findings.map((f, i) => Object.assign({}, f, { _originalIdx: i, _excluded: false }));
+        originalFindings = currentFindings.map((f) => Object.assign({}, f));
+        currentRunSection.classList.remove("hidden");
+        rebuildFindingCards();
+        renderFalsePositiveCards();
+        updateGenerateButtonState();
+      }
+
+      function loadHistoryEntryIntoDraft(entry) {
+        const analysisData = entry && entry.analysis_data && typeof entry.analysis_data === "object"
+          ? Object.assign({}, entry.analysis_data)
+          : null;
+        if (!analysisData) {
+          logError("history", "Selected history entry does not contain a reusable analysis snapshot.");
+          return;
+        }
+        analysisId = "";
+        renderFindings({ data: analysisData, raw_texts: [] });
+        generateDownloadTopEl.innerHTML = "";
+        generateDownloadEl.innerHTML = "";
+        setGenerateStatus("Loaded history entry into the current draft editor.", "success");
+        switchTab("analyze");
+      }
+
+      function rebuildFindingCards() {
+        findingsListEl.innerHTML = "";
+        const count = currentFindings.filter((f) => !f._excluded).length;
+        const fpText = currentFalsePositives.length
+          ? ", " + currentFalsePositives.length + " false positive" + (currentFalsePositives.length === 1 ? "" : "s")
+          : "";
+        findingCountEl.textContent =
+          currentFindings.length
+          + " finding"
+          + (currentFindings.length !== 1 ? "s" : "")
+          + " ("
+          + count
+          + " included)"
+          + fpText;
+        currentFindings.forEach((finding, displayIdx) => {
+          findingsListEl.appendChild(buildFindingCard(finding, displayIdx));
+        });
+      }
+
+      function renderFalsePositiveCards() {
+        falsePositivesListEl.innerHTML = "";
+        const fps = Array.isArray(currentFalsePositives) ? currentFalsePositives : [];
+        falsePositivesSectionEl.classList.toggle("hidden", fps.length === 0);
+        falsePositivesSectionEl.open = fps.length > 0;
+        falsePositivesSummaryEl.textContent =
+          "View false positives (" + fps.length + ")";
+        fps.forEach((finding, idx) => {
+          falsePositivesListEl.appendChild(buildReadOnlyFindingCard(finding, idx));
+        });
+      }
+
+      const FIELDS = [
+        { key: "name",              label: "Name",               type: "text",     full: false },
+        { key: "severity",          label: "Severity",           type: "select",   options: ["Critical","High","Medium","Low","Informational"], full: false },
+        { key: "cvss",              label: "CVSS",               type: "text",     full: false },
+        { key: "cve",               label: "CVE",                type: "text",     full: false },
+        { key: "affected_assets",   label: "Affected Assets",    type: "textarea", full: false },
+        { key: "category",          label: "Category",           type: "text",     full: false },
+        { key: "description",       label: "Description",        type: "textarea", full: true  },
+        { key: "business_impact",   label: "Business Impact",    type: "textarea", full: true  },
+        { key: "proof_of_concept",  label: "Proof of Concept",   type: "textarea", full: true  },
+        { key: "remediation",       label: "Remediation",        type: "textarea", full: true  },
+        { key: "control_objective", label: "Control Objective",  type: "textarea", full: true  },
+        { key: "control_name",      label: "Control Name",       type: "text",     full: false },
+        { key: "audit_requirement", label: "Audit Requirement",  type: "textarea", full: true  },
+        { key: "reference",         label: "Reference",          type: "text",     full: false },
+        { key: "observation",       label: "Observation",        type: "select",   options: ["New","Repeat"],   full: false },
+        { key: "remediation_status",label: "Remediation Status", type: "select",   options: ["Open","Closed"],  full: false },
+      ];
+
+      function buildFindingCard(finding, displayIdx) {
+        const card = document.createElement("div");
+        card.className = "finding-card" + (finding._excluded ? " excluded" : "");
+        card.dataset.displayIdx = displayIdx;
+        card.draggable = true;
+
+        const header = document.createElement("div");
+        header.className = "card-header";
+
+        const dragHandle = document.createElement("span");
+        dragHandle.className = "drag-handle";
+        dragHandle.textContent = "\u2837";
+        dragHandle.title = "Drag to reorder";
+        dragHandle.addEventListener("mousedown", () => { card.draggable = true; });
+
+        const excludeCb = document.createElement("input");
+        excludeCb.type = "checkbox"; excludeCb.className = "exclude-cb";
+        excludeCb.title = "Exclude from report"; excludeCb.checked = finding._excluded;
+
+        const numSpan = document.createElement("span");
+        numSpan.className = "card-num"; numSpan.textContent = "#" + (displayIdx + 1);
+
+        const sevBadge = document.createElement("span");
+        sevBadge.className = "sev-badge " + sevClass(finding.severity);
+        sevBadge.textContent = finding.severity || "Unknown";
+
+        const titleSpan = document.createElement("span");
+        titleSpan.className = "card-title" + (finding._excluded ? " excluded-label" : "");
+        titleSpan.textContent = finding.name || "(unnamed)";
+
+        const toggleBtn = document.createElement("button");
+        toggleBtn.className = "toggle-btn"; toggleBtn.textContent = "\u25bc";
+        toggleBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const body = card.querySelector(".card-body");
+          body.classList.toggle("open");
+          toggleBtn.textContent = body.classList.contains("open") ? "\u25b2" : "\u25bc";
+        });
+
+        excludeCb.addEventListener("change", (e) => {
+          e.stopPropagation();
+          currentFindings[displayIdx]._excluded = excludeCb.checked;
+          card.classList.toggle("excluded", excludeCb.checked);
+          titleSpan.classList.toggle("excluded-label", excludeCb.checked);
+          updateFindingCount();
+        });
+
+        header.appendChild(dragHandle); header.appendChild(excludeCb); header.appendChild(numSpan);
+        header.appendChild(sevBadge);   header.appendChild(titleSpan); header.appendChild(toggleBtn);
+
+        header.addEventListener("click", () => {
+          const body = card.querySelector(".card-body");
+          body.classList.toggle("open");
+          toggleBtn.textContent = body.classList.contains("open") ? "\u25b2" : "\u25bc";
+        });
+
+        const body = document.createElement("div");
+        body.className = "card-body";
+        const fieldGrid = document.createElement("div");
+        fieldGrid.className = "field-grid";
+
+        FIELDS.forEach(function(fd) {
+          const fieldDiv = document.createElement("div");
+          fieldDiv.className = "field" + (fd.full ? " field-full" : "");
+          const lbl = document.createElement("label"); lbl.textContent = fd.label;
+          let input;
+          if (fd.type === "textarea") {
+            input = document.createElement("textarea"); input.rows = 3;
+          } else if (fd.type === "select") {
+            input = document.createElement("select");
+            (fd.options || []).forEach((opt) => {
+              const o = document.createElement("option"); o.value = opt; o.textContent = opt;
+              input.appendChild(o);
+            });
+          } else {
+            input = document.createElement("input"); input.type = "text";
+          }
+          input.value = finding[fd.key] || "";
+          input.dataset.field = fd.key;
+          if (fd.key === "name") {
+            input.addEventListener("input", () => {
+              titleSpan.textContent = input.value || "(unnamed)";
+              currentFindings[displayIdx].name = input.value;
+            });
+          }
+          if (fd.key === "severity") {
+            input.addEventListener("change", () => {
+              sevBadge.className = "sev-badge " + sevClass(input.value);
+              sevBadge.textContent = input.value || "Unknown";
+              currentFindings[displayIdx].severity = input.value;
+            });
+          }
+          fieldDiv.appendChild(lbl); fieldDiv.appendChild(input);
+          fieldGrid.appendChild(fieldDiv);
+        });
+
+        body.appendChild(fieldGrid);
+
+        const origIdx = finding._originalIdx;
+        if (origIdx != null && rawTexts[origIdx]) {
+          const rawToggle = document.createElement("button");
+          rawToggle.className = "raw-toggle"; rawToggle.textContent = "Show raw LLM output";
+          const rawPre = document.createElement("pre");
+          rawPre.className = "raw-output hidden";
+          try { rawPre.textContent = JSON.stringify(JSON.parse(rawTexts[origIdx]), null, 2); }
+          catch (_) { rawPre.textContent = rawTexts[origIdx]; }
+          rawToggle.addEventListener("click", () => {
+            rawPre.classList.toggle("hidden");
+            rawToggle.textContent = rawPre.classList.contains("hidden") ? "Show raw LLM output" : "Hide raw LLM output";
+          });
+          body.appendChild(rawToggle); body.appendChild(rawPre);
+        }
+
+        card.appendChild(header); card.appendChild(body);
+
+        card.addEventListener("dragstart", (e) => {
+          dragSrcIdx = displayIdx; e.dataTransfer.effectAllowed = "move"; card.style.opacity = "0.5";
+        });
+        card.addEventListener("dragend", () => {
+          card.style.opacity = "";
+          document.querySelectorAll(".finding-card.drag-over").forEach((c) => c.classList.remove("drag-over"));
+        });
+        card.addEventListener("dragover", (e) => {
+          e.preventDefault(); e.dataTransfer.dropEffect = "move"; card.classList.add("drag-over");
+        });
+        card.addEventListener("dragleave", () => card.classList.remove("drag-over"));
+        card.addEventListener("drop", (e) => {
+          e.preventDefault(); card.classList.remove("drag-over");
+          if (dragSrcIdx === null || dragSrcIdx === displayIdx) return;
+          syncCardValuesToState();
+          const moved = currentFindings.splice(dragSrcIdx, 1)[0];
+          currentFindings.splice(displayIdx, 0, moved);
+          dragSrcIdx = null;
+          rebuildFindingCards();
+        });
+
+        return card;
+      }
+
+      function syncCardValuesToState() {
+        currentRunSection.querySelectorAll(".finding-card").forEach((card) => {
+          const idx = parseInt(card.dataset.displayIdx, 10);
+          if (isNaN(idx) || idx >= currentFindings.length) return;
+          card.querySelectorAll("[data-field]").forEach((inp) => { if (inp.dataset.field) currentFindings[idx][inp.dataset.field] = inp.value; });
+          const cb = card.querySelector(".exclude-cb");
+          if (cb) currentFindings[idx]._excluded = cb.checked;
+        });
+      }
+
+      function updateFindingCount() {
+        const count = currentFindings.filter((f) => !f._excluded).length;
+        findingCountEl.textContent = currentFindings.length + " finding" + (currentFindings.length !== 1 ? "s" : "") + " (" + count + " included)";
+      }
+
+      function buildReadOnlyFindingCard(finding, displayIdx) {
+        const card = document.createElement("div");
+        card.className = "finding-card";
+
+        const header = document.createElement("div");
+        header.className = "card-header";
+
+        const numSpan = document.createElement("span");
+        numSpan.className = "card-num";
+        numSpan.textContent = "#" + (displayIdx + 1);
+
+        const sevBadge = document.createElement("span");
+        sevBadge.className = "sev-badge " + sevClass(finding.severity);
+        sevBadge.textContent = finding.severity || "Unknown";
+
+        const titleSpan = document.createElement("span");
+        titleSpan.className = "card-title";
+        titleSpan.textContent = finding.name || "(unnamed)";
+
+        const toggleBtn = document.createElement("button");
+        toggleBtn.className = "toggle-btn";
+        toggleBtn.type = "button";
+        toggleBtn.textContent = "\u25bc";
+
+        const body = document.createElement("div");
+        body.className = "card-body";
+
+        function toggleBody() {
+          body.classList.toggle("open");
+          toggleBtn.textContent = body.classList.contains("open") ? "\u25b2" : "\u25bc";
+        }
+
+        toggleBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          toggleBody();
+        });
+        header.addEventListener("click", toggleBody);
+
+        header.appendChild(numSpan);
+        header.appendChild(sevBadge);
+        header.appendChild(titleSpan);
+        header.appendChild(toggleBtn);
+
+        const fieldGrid = document.createElement("div");
+        fieldGrid.className = "field-grid";
+
+        FIELDS.forEach((fd) => {
+          const fieldDiv = document.createElement("div");
+          fieldDiv.className = "field" + (fd.full ? " field-full" : "");
+          const lbl = document.createElement("label");
+          lbl.textContent = fd.label;
+          const value = finding[fd.key] == null ? "" : String(finding[fd.key]);
+          const input = fd.full ? document.createElement("textarea") : document.createElement("input");
+          if (!fd.full) input.type = "text";
+          input.value = value;
+          input.readOnly = true;
+          fieldDiv.appendChild(lbl);
+          fieldDiv.appendChild(input);
+          fieldGrid.appendChild(fieldDiv);
+        });
+
+        body.appendChild(fieldGrid);
+        card.appendChild(header);
+        card.appendChild(body);
+        return card;
+      }
+
+      sortSeverityBtn.addEventListener("click", () => {
+        syncCardValuesToState();
+        currentFindings.sort((a, b) => sevRank(a.severity) - sevRank(b.severity));
+        rebuildFindingCards();
+      });
+      sortNameBtn.addEventListener("click", () => {
+        syncCardValuesToState();
+        currentFindings.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+        rebuildFindingCards();
+      });
+      resetOrderBtn.addEventListener("click", () => {
+        currentFindings = originalFindings.map((f) => Object.assign({}, f));
+        rebuildFindingCards();
+      });
+
+      function collectEditedFindings() {
+        syncCardValuesToState();
+        const result = [];
+        currentRunSection.querySelectorAll(".finding-card").forEach((card) => {
+          const idx = parseInt(card.dataset.displayIdx, 10);
+          if (isNaN(idx) || idx >= currentFindings.length) return;
+          const f = currentFindings[idx];
+          if (f._excluded) return;
+          const clean = Object.assign({}, f);
+          delete clean._originalIdx; delete clean._excluded;
+          result.push(clean);
+        });
+        return result;
+      }
+
+      async function generateDocx() {
+        if (!currentAnalysisData) { setGenerateStatus("No analysis data. Run analysis first.", "error"); return; }
+        const templateFile = templateFileEl.files && templateFileEl.files[0];
+        if (templateFile && !isDocxFile(templateFile)) {
+          setGenerateStatus("Error: Base template must be a .docx file.", "error");
+          return;
+        }
+        if (!templateFile && !activeTemplateState.has_template) {
+          setGenerateStatus("Select or save a .docx template to enable report generation.", "warn");
+          return;
+        }
+        stopGeneratePoll();
+        generateJobId = "";
+        generateBtnTop.disabled = true; generateBtnBottom.disabled = true;
+        generateDownloadTopEl.innerHTML = "";
+        generateDownloadEl.innerHTML = "";
+        setGenerateStatus(templateFile ? "Uploading template and generating DOCX report\u2026" : "Generating DOCX report\u2026", "");
+        const editedFindings = collectEditedFindings();
+        const analysisDataToSend = Object.assign({}, currentAnalysisData, { findings: editedFindings });
+        try {
+          const templateContentBase64 = templateFile ? await fileToBase64(templateFile) : "";
+          const resp = await fetch("/api/generate", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              analysis_id: analysisId || undefined,
+              analysis_data: analysisDataToSend,
+              include_summary_table: includeSummaryTableEl.checked,
+              template_filename: templateFile ? templateFile.name : undefined,
+              template_content_base64: templateContentBase64 || undefined,
+            }),
+          });
+          const data = await resp.json().catch(() => ({}));
+          if (!resp.ok) throw new Error(data.error || "HTTP " + resp.status + " starting generation");
+          generateJobId = data.job_id;
+          if (templateFile) {
+            templateFileEl.value = "";
+            updateSelectedTemplateState();
+            await refreshTemplateState();
+          }
+          logInfo("generate", "Job started: " + generateJobId);
+          pollGenerateJob();
+        } catch (err) {
+          updateGenerateButtonState();
+          setGenerateStatus("Error: " + (err.message || err), "error");
+          logError("generate", err.message || String(err));
+        }
+      }
+
+      function setGenerateStatus(msg, level) {
+        [generateStatusTopEl, generateStatusEl].forEach((el) => {
+          el.textContent = msg;
+          el.classList.remove("hidden", "error", "warn", "success");
+          if (level) el.classList.add(level);
+        });
+      }
+
+      async function pollGenerateJob() {
+        if (!generateJobId) return;
+        try {
+          const resp = await fetch("/api/generate/" + generateJobId);
+          const data = await resp.json().catch(() => ({}));
+          if (!resp.ok) throw new Error(data.error || "HTTP " + resp.status + " polling generate");
+          const progress = data.progress || {};
+          if (progress.message) setGenerateStatus(progress.message, "");
+          if (data.status === "running") { generatePollTimer = setTimeout(pollGenerateJob, 700); return; }
+          stopGeneratePoll();
+          updateGenerateButtonState();
+          if (data.status === "completed") {
+            const result = data.result || {};
+            const link = document.createElement("a");
+            link.href = result.download_url;
+            link.textContent = "\u2b07 Download " + result.file_name;
+            link.setAttribute("download", result.file_name);
+            const topLink = link.cloneNode(true);
+            generateDownloadTopEl.innerHTML = "";
+            generateDownloadEl.innerHTML = "";
+            generateDownloadTopEl.appendChild(topLink);
+            generateDownloadEl.appendChild(link);
+            setGenerateStatus("DOCX generated successfully.", "success");
+            logInfo("generate", "Completed: " + result.file_name);
+            return;
+          }
+          if (data.status === "canceled") { setGenerateStatus("Generation canceled.", "warn"); logWarn("generate", "Canceled."); }
+          else {
+            const errMsg = data.error || "Generation ended unexpectedly";
+            setGenerateStatus("Error: " + errMsg, "error"); logError("generate", errMsg);
+          }
+        } catch (err) {
+          stopGeneratePoll();
+          updateGenerateButtonState();
+          setGenerateStatus("Error: " + (err.message || err), "error");
+          logError("generate", err.message || String(err));
+        }
+      }
+
+      generateBtnTop.addEventListener("click",    generateDocx);
+      generateBtnBottom.addEventListener("click", generateDocx);
+
+      // History
+      async function loadHistory() {
+        try {
+          const resp = await fetch("/api/history");
+          const data = await resp.json().catch(() => ({}));
+          if (!resp.ok || !data.ok) throw new Error(data.error || "HTTP " + resp.status);
+          const hist = Array.isArray(data.history) ? data.history : [];
+          historyBody.innerHTML = "";
+          if (hist.length === 0) {
+            historyEmptyEl.classList.remove("hidden");
+          } else {
+            historyEmptyEl.classList.add("hidden");
+            hist.forEach((entry) => {
+              const tr = document.createElement("tr");
+              tr.className = "history-primary-row";
+              const entryDate = entry.date ? new Date(entry.date) : null;
+              const td1 = document.createElement("td");
+              const dateMain = document.createElement("div");
+              dateMain.className = "history-cell-main";
+              dateMain.textContent = entryDate ? entryDate.toLocaleDateString() : "\u2014";
+              const dateSub = document.createElement("div");
+              dateSub.className = "history-cell-sub";
+              dateSub.textContent = entryDate ? entryDate.toLocaleTimeString() : "";
+              td1.appendChild(dateMain);
+              if (dateSub.textContent) td1.appendChild(dateSub);
+
+              const td2 = document.createElement("td");
+              const inputMain = document.createElement("div");
+              inputMain.className = "history-cell-main";
+              inputMain.textContent = entry.input_name || entry.source_file || "\u2014";
+              td2.appendChild(inputMain);
+
+              const td3 = document.createElement("td");
+              const findingsMain = document.createElement("div");
+              findingsMain.className = "history-cell-main";
+              findingsMain.textContent = entry.finding_count != null
+                ? String(entry.finding_count)
+                : "\u2014";
+              const findingsSub = document.createElement("div");
+              findingsSub.className = "history-cell-sub";
+              findingsSub.textContent = entry.finding_count != null
+                ? "finding" + (Number(entry.finding_count) === 1 ? "" : "s")
+                : "";
+              td3.appendChild(findingsMain);
+              if (findingsSub.textContent) td3.appendChild(findingsSub);
+
+              const td4 = document.createElement("td");
+              if (entry.report_download_url) {
+                const a = document.createElement("a");
+                a.className = "history-link";
+                a.href = entry.report_download_url;
+                a.textContent = entry.file_name || "\u2b07 Download report";
+                a.setAttribute("download", entry.file_name || "report.docx");
+                td4.appendChild(a);
+              } else {
+                td4.textContent = "\u2014";
+              }
+              const td5 = document.createElement("td");
+              if (entry.log_download_url) {
+                const a = document.createElement("a");
+                a.className = "history-link";
+                a.href = entry.log_download_url;
+                a.textContent = "\u2b07 Download log";
+                a.setAttribute("download", "run_log.json");
+                td5.appendChild(a);
+              } else {
+                td5.textContent = "\u2014";
+              }
+              tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3);
+              tr.appendChild(td4); tr.appendChild(td5);
+              historyBody.appendChild(tr);
+
+              const detailRow = document.createElement("tr");
+              detailRow.className = "history-detail-row";
+              const detailCell = document.createElement("td");
+              detailCell.colSpan = 5;
+              const detailPanel = document.createElement("div");
+              detailPanel.className = "history-detail-panel";
+              const actions = document.createElement("div");
+              actions.className = "history-actions";
+              const editBtn = document.createElement("button");
+              editBtn.type = "button";
+              editBtn.textContent = "Load Into Draft";
+              editBtn.addEventListener("click", () => loadHistoryEntryIntoDraft(entry));
+              actions.appendChild(editBtn);
+              detailPanel.appendChild(actions);
+              const findings = Array.isArray(entry.findings) ? entry.findings : [];
+              const falsePositives = Array.isArray(entry.analysis_data && entry.analysis_data.false_positives)
+                ? entry.analysis_data.false_positives
+                : [];
+              if (findings.length > 0) {
+                const details = document.createElement("details");
+                details.className = "history-findings";
+                const summary = document.createElement("summary");
+                summary.textContent = "View findings snapshot";
+                const findingsList = document.createElement("div");
+                findingsList.className = "history-findings-list";
+                findings.forEach((finding, idx) => {
+                  findingsList.appendChild(buildReadOnlyFindingCard(finding, idx));
+                });
+                details.appendChild(summary);
+                details.appendChild(findingsList);
+                detailPanel.appendChild(details);
+              }
+              if (falsePositives.length > 0) {
+                const fpDetails = document.createElement("details");
+                fpDetails.className = "history-findings";
+                const fpSummary = document.createElement("summary");
+                fpSummary.textContent = "View false positives snapshot";
+                const fpList = document.createElement("div");
+                fpList.className = "history-findings-list";
+                falsePositives.forEach((finding, idx) => {
+                  fpList.appendChild(buildReadOnlyFindingCard(finding, idx));
+                });
+                fpDetails.appendChild(fpSummary);
+                fpDetails.appendChild(fpList);
+                detailPanel.appendChild(fpDetails);
+              }
+              if (findings.length === 0 && falsePositives.length === 0) {
+                detailPanel.textContent = "No findings snapshot saved for this run.";
+              }
+              detailCell.appendChild(detailPanel);
+              detailRow.appendChild(detailCell);
+              historyBody.appendChild(detailRow);
+            });
+          }
+        } catch (err) { logError("history", err.message || String(err)); }
+      }
+
+      refreshHistoryBtn.addEventListener("click", loadHistory);
+    </script>
+  </body>
+</html>

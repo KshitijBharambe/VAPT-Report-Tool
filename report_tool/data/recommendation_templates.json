@@ -1,0 +1,99 @@
+{
+  "RECOMMENDATION_TEMPLATES": {
+    "cipher_weakness": "Reconfigure the affected application to disable {weak_cipher_types} and accept only strong cipher suites (AES-128-GCM, AES-256-GCM, CHACHA20-POLY1305) under TLS 1.2 and TLS 1.3.\nIf configurations cannot be updated immediately due to legacy compatibility dependencies, implement firewall rules to restrict network access to the affected services to trusted hosts only.\nEnable logging and monitoring for unusual SSL/TLS traffic patterns. Implement network-level encryption solutions such as VPN tunnels as temporary mitigation. Educate stakeholders about risks and planned remediation timelines.",
+    "deprecated_tls": "Enable support for TLS 1.2 and 1.3, and disable support for {deprecated_version}.\nIf {deprecated_version} cannot be disabled due to legacy compatibility needs, limit exposure by restricting access to trusted networks only via firewalls and implement TLS termination proxies that enforce TLS 1.2+ on the client side.\nMonitor network traffic for use of deprecated TLS versions and generate alerts. Plan and schedule upgrades to software and devices to support current TLS standards.",
+    "sql_injection": "Implement parameterised queries (prepared statements) for all database interactions. Replace dynamic SQL concatenation with bound parameters. Apply strict input validation using allowlists for expected data formats.\nIf code remediation is not immediately feasible, deploy a Web Application Firewall (WAF) with SQL injection detection rules as a temporary compensating control. Restrict database user privileges to minimum required.\nEnable database query logging and monitor for suspicious query patterns. Implement alerting for failed SQL syntax errors that may indicate injection attempts.",
+    "xss": "Apply context-aware output encoding for all user-supplied data rendered in HTML, JavaScript, CSS, or URL contexts. Implement Content-Security-Policy headers with strict source directives (no unsafe-inline, no unsafe-eval).\nIf immediate code remediation is not feasible, deploy WAF rules to filter common XSS payloads. Implement HTTPOnly and Secure flags on all session cookies.\nMonitor application logs for script injection patterns. Enable CSP violation reporting to detect bypass attempts.",
+    "command_injection": "Replace shell command construction with parameterised system APIs (e.g., subprocess with list arguments, no shell=True). Apply strict input validation using allowlists for expected command arguments.\nIf code modification is not immediately feasible, run the application with minimal OS privileges and restrict network egress via firewall rules.\nMonitor system logs for unusual process execution. Implement application-level command auditing.",
+    "self_signed_cert": "Replace self-signed certificates with certificates issued by a trusted public CA (for internet-facing systems) or internal enterprise CA (for internal systems). Ensure proper certificate chain installation, including intermediate certificates. Enforce strong cryptographic algorithms (RSA ≥ 2048 bits, ECC ≥ 256 bits, SHA-256 or stronger).\nIf Self-Signed Certificate must be kept temporarily, distribute the self-signed root certificate to all trusted client systems so that it is recognized. Restrict access to the system via firewall or VPN to minimize exposure.\nDocument the exception with justification and a timeline for migration to a trusted CA. Continuously monitor TLS connections for potential downgrade or man-in-the-middle attacks.",
+    "certificate_expiry": "Renew the SSL/TLS certificate before expiry using a trusted Certificate Authority.\nRestrict access to the affected system to internal, trusted networks only via firewall rules. Configure intrusion prevention systems (IPS) to flag or block connections from untrusted sources. Use a VPN tunnel with strong encryption for any communication to/from the affected service.\nImplement automated certificate monitoring and alerting to avoid future expiration lapses.",
+    "certificate_hostname": "Purchase or generate a proper SSL certificate for this service with the correct hostname in the CN/SAN fields.\nIf proper SSL certificate cannot be implemented, enforce network-level segmentation and access controls to restrict access to only trusted IP ranges. Configure IDS/IPS signatures to monitor and alert for unexpected SSL/TLS certificate warnings or mismatched hostnames.\nImplement certificate pinning or custom validation logic on client systems. Capture SSL/TLS handshake failures and certificate warnings in SIEM or log management tools.",
+    "certificate_trust": "Replace the untrusted certificate with one issued by a recognized Certificate Authority. Ensure proper certificate chain installation.\nIf certificate replacement is not immediately feasible, restrict access to the affected system to trusted networks only via firewall rules. Configure intrusion prevention systems (IPS) to flag or block connections from untrusted sources.\nUse a VPN tunnel with strong encryption for any communication to/from the affected service. Document the exception with justification and remediation timeline.",
+    "certificate_weak_hash": "Regenerate the SSL/TLS certificate using a strong hashing algorithm (SHA-256 or stronger). Replace any certificates signed with MD5 or SHA-1.\nIf certificate regeneration is not immediately feasible, restrict access to the affected system to internal, trusted networks only via firewall rules.\nImplement automated certificate monitoring and alerting to track certificate properties and expiration.",
+    "eol_ubuntu": "Upgrade to a supported version ({upgrade_targets}).\nPurchase Extended Security Maintenance (ESM): Canonical offers ESM for older releases through the Ubuntu Pro Subscription, providing continued security patching.\nIsolate and harden the system: Setup a firewall on the network to isolate the system and limit access, turn off any non-essential service running on the system, actively monitor activity on the machine.",
+    "eol_windows": "Upgrade to a supported Windows Server version ({upgrade_targets}).\nIf immediate upgrade is not feasible, enroll in Microsoft Extended Security Updates (ESU) program to receive critical security patches.\nIsolate the system using network segmentation. Disable unnecessary services and restrict access to authorized administrators only. Implement enhanced monitoring for the legacy system.",
+    "eol_generic": "Upgrade to the latest supported version of the software or operating system and apply all available security patches.\nIf an immediate upgrade is not operationally feasible, contact the vendor for extended support options that provide continued security patching.\nIsolate and harden the system: implement firewall rules to restrict access to trusted hosts only, disable all non-essential services, and actively monitor system activity for anomalous behaviour.",
+    "snmp_default": "If SNMP is required: Replace default community strings ('public', 'private') with unique complex community strings. Restrict access to SNMP via firewall or router ACLs so only authorized management servers can query it. Disable SNMP v1/v2c and upgrade to SNMP v3 with strong authentication and encryption. Regularly monitor SNMP logs for unauthorized access attempts.\nIf SNMP is not required: Disable SNMP services entirely on all non-essential systems.\nMonitor network traffic for SNMP queries from unauthorized sources. Configure alerts for SNMP configuration changes or unusual query patterns.",
+    "smb_signing": "Configure the SMB server to require signing (not just support it). Verify that all domain-joined clients enforce signing via Group Policy.\nIf SMB signing cannot be enforced due to legacy client compatibility, isolate affected systems into a dedicated network segment and restrict access via firewall ACLs.\nMonitor SMB traffic for relay attack patterns. Review and audit SMB access logs regularly.",
+    "hsts_missing": "Implement HSTS security header to ensure that browsers always use HTTPS: Strict-Transport-Security: max-age=31536000; includeSubDomains; preload\nSetup a redirection rule to ensure that web application is always requested on port 443 instead of port 80.\nMonitor for HTTP downgrade attempts in web server access logs. Consider HSTS preload submission after confirming header is correctly deployed.",
+    "clickjacking": "Implement X-Frame-Options header (DENY or SAMEORIGIN) or Content-Security-Policy frame-ancestors directive on all responses.\nIf framing must be allowed for specific trusted origins, use CSP frame-ancestors with explicit allowlist instead of ALLOWALL.\nMonitor for unusual iframe embedding patterns through referrer logs.",
+    "security_headers_generic": "Configure appropriate HTTP security response headers on all application responses:\n• Content-Security-Policy: Restrict script and resource loading to trusted sources\n• X-Frame-Options: DENY or SAMEORIGIN to prevent clickjacking\n• X-Content-Type-Options: nosniff to prevent MIME-type sniffing\n• Strict-Transport-Security: max-age=31536000; includeSubDomains\nIf headers cannot be configured at application level, implement them via reverse proxy, load balancer, or WAF.\nMonitor response headers periodically to ensure configuration is maintained across deployments.",
+    "legacy_service": "Stop and disable the {service_name} on all systems where it is running.\nBlock {service_name} traffic at perimeter firewalls and edge routers to prevent external exploitation. Implement ingress/egress filtering to prevent misuse in reflection or amplification attacks.\nConduct periodic service audits to identify and disable unnecessary legacy services.",
+    "database_exposure": "If the {service} must be closed (preferred): Restrict access using firewall rules / network ACLs. Enable authentication and enforce strong credentials. Apply TLS/SSL encryption to all connections. Audit and remove any publicly accessible endpoints exposing sensitive data.\nIf the {service} must remain open for business purposes: Enable strict authentication. Implement role-based access control (RBAC) to limit queries to authorized users only. Enable read-only access for public endpoints, if needed.\nMonitor traffic to the {service} for abnormal queries or exfiltration attempts. Use logging and alerting for sensitive data access.",
+    "ssh_weak_ciphers": "Disable insecure ciphers in the SSH daemon configurations. Allow only strong ciphers such as aes128-ctr, aes256-ctr, aes256-gcm@openssh.com, or chacha20-poly1305@openssh.com.\nRegularly patch and update SSH server to the latest version. Explicitly disable weak algorithms, password authentication for privileged accounts, and root direct login.\nPeriodically review SSH configurations against current security best practices. Enable verbose logging and monitor for unusual login attempts.",
+    "openssh_outdated": "Upgrade to OpenSSH {fixed_version} or later and apply vendor-supplied patches if using the distributed-packaged version.\nExplicitly disable weak algorithms in sshd_config. Enforce key-based authentication and disable direct root login.\nEnable verbose logging of SSH and monitor for unusual login attempts or brute-force patterns.",
+    "nginx_info_disclosure": "Disable version disclosure by setting server_tokens off; in nginx.conf. Implement custom error pages to suppress file system path exposure. Disable directory listing with autoindex off. Regularly update and patch Nginx to the latest stable release.\nIf service cannot be patched immediately, restrict access using firewall rules (allow only trusted IPs). Place Nginx behind a reverse proxy or WAF to mask version information.\nMonitor logs for unusual requests targeting exposed directories or version-specific exploits. Document exceptions with risk acceptance and remediation timelines.",
+    "apache_info_disclosure": "Disable version disclosure by setting ServerTokens Prod and ServerSignature Off in Apache configuration. Remove default index pages and error pages that reveal server information.\nIf Apache cannot be patched immediately, restrict access using firewall rules. Implement mod_security with OWASP Core Rule Set.\nMonitor access logs for reconnaissance requests targeting server information. Document exceptions with risk acceptance and remediation timelines.",
+    "directory_listing": "Disable directory listing on the web server. For Apache, ensure Options -Indexes is set. For Nginx, ensure autoindex is off.\nIf directory listing must be enabled for specific directories, restrict access via authentication or IP-based ACLs.\nAudit web roots to ensure no sensitive files or directories are exposed. Monitor access logs for directory enumeration patterns.",
+    "jenkins_outdated": "Regularly apply Jenkins core and plugin security updates to version {fixed_version} or later.\nDisable anonymous login. Harden Jenkins configurations by disabling unused plugins, securing credentials, and segregating build nodes from production servers.\nContinuously monitor Jenkins log and pipeline for unusual activities, such as unauthorized job changes, plugin installations, or credential usage.",
+    "kibana_outdated": "Upgrade Kibana to the latest stable version and apply all vendor security advisories.\nIf upgrading to latest version is not possible, disable Timelion via timelion.enabled:false in kibana.yml. Enable xpack.security.audit.enabled to capture anomalous requests.\nConfigure monitoring and web logging to capture anomalous requests (e.g., suspicious Timelion expressions). Configure alerts in SIEM for potential exploitation patterns.",
+    "rdp_exposure": "Enforce Network Level Authentication (NLA) on all RDP endpoints. Require strong encryption and disable RC4 cipher.\nRestrict RDP access to VPN or trusted IP ranges via firewall. Implement MFA for all RDP access.\nMonitor RDP login attempts for brute-force patterns. Configure account lockout policies to prevent credential stuffing.",
+    "dns_dynamic_update": "Implement strict RBAC (Role Based Access Control): limit DNS/DHCP administrative access to authorized network administrators only.\nImplement DHCP Snooping on network switches to prevent rogue devices from registering illegitimate records. Use IP Source Guard and Dynamic ARP Inspection to block spoofed traffic.\nSetup monitoring to detect unusual DHCP/DNS activity such as pool exhaustion, duplicate IPs, or unauthorized registrations.",
+    "icmp_timestamp": "Disable ICMP timestamp responses at the operating system or firewall level. For Windows, use Windows Defender Firewall rules to block or drop the request. For Linux: sysctl -w net.ipv4.icmp_echo_ignore_all=1\nHarden perimeter firewalls to drop inbound ICMP type 13 packets.\nPrefer modern time synchronization protocols (e.g., NTP with authentication) instead of ICMP timestamp.",
+    "autocomplete_enabled": "Update application login forms to include autocomplete=\"off\" or autocomplete=\"new-password\" for sensitive fields.\nApply secure session management practices (e.g., short session timeout, MFA) to further reduce risk.\nEducate developers on secure coding practices for handling authentication fields.",
+    "outdated_service_generic": "Upgrade {product} to version {fixed_version} or later and apply vendor-supplied patches.\nIf upgrade is not immediately feasible, restrict access to the service using firewall rules to allow only trusted hosts. Consider implementing a WAF or reverse proxy to filter malicious requests.\nMonitor service logs for exploitation attempts. Document exceptions with risk acceptance and remediation timelines.",
+    "rce_generic": "Regularly apply {product} security updates and vendor-supplied patches addressing remote code execution vulnerabilities.\nIf the business process does not depend on {product}, disable or uninstall the service completely. Limit traffic to trusted hosts only via firewall or network ACLs.\nInspect for unusual inbound/outbound traffic and data transfers that may signal exploitation. Monitor logs for anomalous activity patterns.",
+    "service_exposure": "Use authentication features (Active Directory/LDAP or certificate-based authentication) and enforce role-based access controls for administrative actions on {service}.\nPlace {service} in a dedicated network segment or configure firewall rules such that only authorized application servers can access it, not general users within the subnet.\nMonitor access logs for unauthorized connection attempts. Implement intrusion detection rules for suspicious activity patterns."
+  },
+  "EOL_UPGRADE_PATHS": {
+    "ubuntu 14.04": {
+      "upgrade_targets": "22.04 or 24.04",
+      "template": "eol_ubuntu"
+    },
+    "ubuntu 16.04": {
+      "upgrade_targets": "22.04 or 24.04",
+      "template": "eol_ubuntu"
+    },
+    "ubuntu 18.04": {
+      "upgrade_targets": "22.04 or 24.04",
+      "template": "eol_ubuntu"
+    },
+    "ubuntu 20.04": {
+      "upgrade_targets": "22.04 or 24.04",
+      "template": "eol_ubuntu"
+    },
+    "centos 6": {
+      "upgrade_targets": "Rocky Linux 9 or AlmaLinux 9",
+      "template": "eol_generic"
+    },
+    "centos 7": {
+      "upgrade_targets": "Rocky Linux 9 or AlmaLinux 9",
+      "template": "eol_generic"
+    },
+    "centos 8": {
+      "upgrade_targets": "Rocky Linux 9 or AlmaLinux 9",
+      "template": "eol_generic"
+    },
+    "windows server 2008": {
+      "upgrade_targets": "Server 2019 or Server 2022",
+      "template": "eol_windows"
+    },
+    "windows server 2012": {
+      "upgrade_targets": "Server 2019 or Server 2022",
+      "template": "eol_windows"
+    },
+    "windows server 2012 r2": {
+      "upgrade_targets": "Server 2019 or Server 2022",
+      "template": "eol_windows"
+    },
+    "debian 8": {
+      "upgrade_targets": "Debian 12 (Bookworm)",
+      "template": "eol_generic"
+    },
+    "debian 9": {
+      "upgrade_targets": "Debian 12 (Bookworm)",
+      "template": "eol_generic"
+    },
+    "debian 10": {
+      "upgrade_targets": "Debian 12 (Bookworm)",
+      "template": "eol_generic"
+    }
+  },
+  "SERVICE_HARDENING": {
+    "openssh": "openssh_outdated",
+    "nginx": "nginx_info_disclosure",
+    "apache": "apache_info_disclosure",
+    "jenkins": "jenkins_outdated",
+    "kibana": "kibana_outdated"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "llm": {
+    "provider": "openrouter",
+    "base_url": "https://openrouter.ai/api/v1",
+    "temperature": 0.1,
+    "max_tokens": 16384,
+    "max_retries": 3
+  },
+  "paths": {
+    "template": "Internal_VAPT_Report_AEG_Vision_-_Phase_2__1431_.docx",
+    "output_dir": "outputs/",
+    "log_dir": "logs/"
+  },
+  "limits": {
+    "max_input_words": 3000,
+    "warn_input_words": 4000,
+    "max_report_tokens": 500000
+  },
+  "quality": {
+    "reference_validation": {
+      "enabled": true,
+      "add_canonical_refs": true,
+      "max_workers": 8,
+      "timeout": 8.0
+    },
+    "scorer": {
+      "enabled": true,
+      "min_pass": 0.55
+    }
+  }
+}
